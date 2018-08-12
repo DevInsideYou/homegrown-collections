@@ -121,7 +121,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("intersection on empty Set should yield an empty Set") {
-    Set.empty.intersection(Set.empty)(randomString) shouldBe false
+    Set.empty.intersection(Set.empty) shouldBe Set.empty
   }
 
   test("intersection on a non empty Set with an empty Set should yield an empty Set") {
@@ -154,7 +154,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("difference on empty Set should yield an empty Set") {
-    Set.empty.difference(Set.empty)(randomString) shouldBe false
+    Set.empty.difference(Set.empty) shouldBe Set.empty
   }
 
   test("difference on a non empty Set with an empty Set should yield an empty Set") {
