@@ -4,19 +4,25 @@ sealed trait Set[Element] extends (Element => Boolean) {
   import Set._
 
   final override def apply(input: Element): Boolean =
-    fold(false)(_ || _ == input)
+    contains(input)
 
-  @scala.annotation.tailrec
-  final def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
-    if (isEmpty)
-      seed
-    else {
-      val nonEmptySet = this.asInstanceOf[NonEmpty[Element]]
-      val element = nonEmptySet.element
-      val otherElements = nonEmptySet.otherElements
+  final def doesNotContain(input: Element): Boolean =
+    !contains(input)
 
-      otherElements.fold(function(seed, element))(function)
-    }
+  final def contains(input: Element): Boolean =
+    exists(_ == input)
+
+  final def doesNotExist(predicate: Element => Boolean): Boolean =
+    !exists(predicate)
+
+  final def exists(predicate: Element => Boolean): Boolean =
+    fold(false)(_ || predicate(_))
+
+  final def notForall(predicate: Element => Boolean): Boolean =
+    !forall(predicate)
+
+  final def forall(predicate: Element => Boolean): Boolean =
+    fold(true)(_ && predicate(_))
 
   final def add(input: Element): Set[Element] =
     fold(NonEmpty(input, empty)) { (acc, current) =>
@@ -37,24 +43,27 @@ sealed trait Set[Element] extends (Element => Boolean) {
   final def union(that: Set[Element]): Set[Element] =
     fold(that)(_ add _)
 
-  final def intersection(that: Set[Element]): Set[Element] =
+  final def intersection(predicate: Element => Boolean): Set[Element] =
+    filter(predicate)
+
+  final def filter(predicate: Element => Boolean): Set[Element] =
     fold(empty[Element]) { (acc, current) =>
-      if (that(current))
+      if (predicate(current))
         acc.add(current)
       else
         acc
     }
 
-  final def difference(that: Set[Element]): Set[Element] =
+  final def difference(predicate: Element => Boolean): Set[Element] =
     fold(empty[Element]) { (acc, current) =>
-      if (that(current))
+      if (predicate(current))
         acc
       else
         acc.add(current)
     }
 
-  final def isSubsetOf(that: Set[Element]): Boolean =
-    fold(true)(_ && that(_))
+  final def isSubsetOf(predicate: Element => Boolean): Boolean =
+    forall(predicate)
 
   final def isSupersetOf(that: Set[Element]): Boolean =
     that.isSubsetOf(this)
@@ -66,6 +75,18 @@ sealed trait Set[Element] extends (Element => Boolean) {
 
   final override def hashCode: Int =
     fold(41)(_ + _.hashCode)
+
+  final override def toString: String =
+    if (isEmpty)
+      "{}"
+    else {
+      val otherElementsSplitByCommaSpace =
+        otherElementsOrThrowException.fold("") { (acc, current) =>
+          s"$acc, $current"
+        }
+
+      "{ " + elementOrThrowException + otherElementsSplitByCommaSpace + " }"
+    }
 
   final def size: Int =
     fold(0) { (acc, _) =>
@@ -79,24 +100,13 @@ sealed trait Set[Element] extends (Element => Boolean) {
     !isEmpty
 
   final def isSingleton: Boolean =
-    if (isEmpty)
-      false
-    else {
-      val nonEmptySet = this.asInstanceOf[NonEmpty[Element]]
-      val otherElements = nonEmptySet.otherElements
-
-      otherElements.isEmpty
-    }
+    nonEmpty && otherElementsOrThrowException.isEmpty
 
   def sample: Option[Element] =
     if (isEmpty)
       None
-    else {
-      val nonEmptySet = this.asInstanceOf[NonEmpty[Element]]
-      val element = nonEmptySet.element
-
-      Some(element)
-    }
+    else
+      Some(elementOrThrowException)
 
   final def foreach[Result](function: Element => Result): Unit = {
     fold(()) { (_, current) =>
@@ -111,6 +121,21 @@ sealed trait Set[Element] extends (Element => Boolean) {
     fold(empty[Result]) { (acc, current) =>
       function(current).fold(acc)(_ add _)
     }
+
+  @scala.annotation.tailrec
+  final def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
+    if (isEmpty)
+      seed
+    else
+      otherElementsOrThrowException.fold(function(seed, elementOrThrowException))(function)
+
+  private[this] lazy val (elementOrThrowException, otherElementsOrThrowException) = {
+    val nonEmptySet = this.asInstanceOf[NonEmpty[Element]]
+    val element = nonEmptySet.element
+    val otherElements = nonEmptySet.otherElements
+
+    element -> otherElements
+  }
 }
 
 object Set {

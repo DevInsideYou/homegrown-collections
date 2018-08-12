@@ -122,6 +122,10 @@ class SetSuite extends FunSuite with Matchers {
 
   test("intersection on empty Set should yield an empty Set") {
     Set.empty.intersection(Set.empty) shouldBe Set.empty
+    Set.empty[Nothing].intersection(_ => false) shouldBe Set.empty
+
+    Set.empty.filter(Set.empty) shouldBe Set.empty
+    Set.empty[Nothing].filter(_ => false) shouldBe Set.empty
   }
 
   test("intersection on a non empty Set with an empty Set should yield an empty Set") {
@@ -230,6 +234,77 @@ class SetSuite extends FunSuite with Matchers {
 
     left.isSupersetOf(right) shouldBe false
     right.isSupersetOf(left) shouldBe true
+  }
+
+  test("equals should be reflexive") {
+    def reflexive(x: Any): Unit = {
+      x shouldBe x
+      x.hashCode shouldBe x.hashCode
+    }
+
+    reflexive(Set.empty)
+    reflexive(Set(1))
+    reflexive(Set(1, 2))
+    reflexive(Set(2, 1))
+  }
+
+  test("equals should be symmetric") {
+    def symmetric(x: Any, y: Any): Unit = {
+      x shouldBe y
+      y shouldBe x
+
+      x.hashCode shouldBe y.hashCode
+      y.hashCode shouldBe x.hashCode
+    }
+
+    symmetric(Set.empty, Set.empty)
+    symmetric(Set(1), Set(1))
+    symmetric(Set(1, 2), Set(1, 2))
+    symmetric(Set(1, 2), Set(2, 1))
+    symmetric(Set(1, 2, 3), Set(1, 2, 3))
+    symmetric(Set(1, 2, 3), Set(1, 3, 2))
+    symmetric(Set(1, 2, 3), Set(2, 1, 3))
+    symmetric(Set(1, 2, 3), Set(2, 3, 1))
+    symmetric(Set(1, 2, 3), Set(3, 1, 2))
+    symmetric(Set(1, 2, 3), Set(3, 2, 1))
+  }
+
+  test("equals should be transitive") {
+    def transitive(x: Any, y: Any, z: Any): Unit = {
+      x shouldBe y
+      y shouldBe z
+      x shouldBe z
+
+      x.hashCode shouldBe y.hashCode
+      y.hashCode shouldBe z.hashCode
+      x.hashCode shouldBe z.hashCode
+    }
+
+    transitive(Set.empty, Set.empty, Set.empty)
+    transitive(Set(1, 2, 3), Set(3, 2, 1), Set(2, 1, 3))
+  }
+
+  test("these should not be equal") {
+    Set(1) should not be Set(2)
+    Set(2) should not be Set(1)
+
+    Set(1) should not be 1
+    1 should not be Set(1)
+
+    Set(1) == 1 shouldBe false
+    // 1 == Set(1) shouldBe false
+
+    Set(1) should not be Set("1")
+    Set("1") should not be Set(1)
+
+    Set(1) == Set("1") shouldBe false
+    Set("1") == Set(1) shouldBe false
+
+    Set(1) should not be Set(1, 2)
+    Set(1, 2) should not be Set(1)
+
+    Set(1) should not be Set(2, 1)
+    Set(2, 1) should not be Set(1)
   }
 
   test("hashCode on an empty Set should not be random") {
@@ -413,6 +488,114 @@ class SetSuite extends FunSuite with Matchers {
       }
 
     chessboard.size shouldBe 64
+  }
+
+  test("Set should be a Function") {
+    val orderedClassmates =
+      Seq("alice", "bob", "frank")
+
+    def isFriend(potentialFriend: String): Boolean =
+      potentialFriend == "frank" || // format: OFF
+      potentialFriend == "bob" // format: ON
+
+    orderedClassmates.filter(isFriend) shouldBe Seq("bob", "frank")
+
+    val friends = Set("frank", "bob")
+
+    orderedClassmates.filter(friends) shouldBe Seq("bob", "frank")
+
+    orderedClassmates.filter(isFriend) shouldBe orderedClassmates.filter(friends)
+  }
+
+  test("contains on an empty Set should yield false") {
+    Set.empty.contains(randomString) shouldBe false
+    Set.empty.doesNotContain(randomString) shouldBe true
+  }
+
+  test("exists on an empty Set should yield false") {
+    Set.empty[String].exists(_ => false) shouldBe false
+    Set.empty[String].doesNotExist(_ => false) shouldBe true
+  }
+
+  test("exists on a non empty Set should yield true") {
+    val element = randomString
+
+    Set(element).exists(_.size == element.size) shouldBe true
+    Set(element).exists(_.size != element.size) shouldBe false
+
+    Set(element).doesNotExist(_.size == element.size) shouldBe false
+    Set(element).doesNotExist(_.size != element.size) shouldBe true
+  }
+
+  test("forall on an empty Set should yield false") {
+    Set.empty[String].forall(_ => false) shouldBe true
+    Set.empty[String].notForall(_ => false) shouldBe false
+  }
+
+  test("forall on a non empty Set should yield true") {
+    val element = randomString
+
+    Set(element).forall(_.size == element.size) shouldBe true
+    Set(element).forall(_.size != element.size) shouldBe false
+
+    Set(element).notForall(_.size == element.size) shouldBe false
+    Set(element).notForall(_.size != element.size) shouldBe true
+  }
+
+  test("toString on an empty Set should yield {}") {
+    Set.empty.toString shouldBe "{}"
+  }
+
+  test("toString on a Set with one element should yield {oneElement}") {
+    val element = randomString
+
+    Set(element).toString shouldBe s"{ $element }"
+  }
+
+  test("toString on a Set with two elements should contain 2 braces, both elements, 2 parens and one comma") {
+    val first = randomString
+    val second = randomString
+
+    first should not be second
+
+    val set = Set(first, second)
+
+    val actual = set.toString
+
+    actual.count(_ == '{') shouldBe 1
+
+    actual should include(first)
+
+    actual.count(_ == ',') shouldBe 1
+
+    actual should include(second)
+
+    actual.count(_ == '}') shouldBe 1
+  }
+
+  test("toString on a Set with two elements should contain 2 braces, both elements, 2 parens and two commas") {
+    val first = randomString
+    val second = randomString
+    val third = randomString
+
+    first should not be second
+    second should not be third
+
+    val set = Set(first, second, third)
+
+    val actual = set.toString
+
+    actual.count(_ == '{') shouldBe 1
+
+    actual should include(first)
+
+    actual.count(_ == ',') shouldBe 2
+
+    actual should include(second)
+
+    actual should include(third)
+
+    actual.count(_ == '}') shouldBe 1
   }
 
   private def randomString: String =
