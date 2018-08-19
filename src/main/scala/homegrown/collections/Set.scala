@@ -1,15 +1,15 @@
 package homegrown.collections
 
-sealed trait Set[Element] extends (Element => Boolean) {
+sealed trait Set[+Element] /*extends (Element => Boolean)*/ {
   import Set._
 
-  final override def apply(input: Element): Boolean =
+  final /*override*/ def apply[Super >: Element](input: Super): Boolean =
     contains(input)
 
-  final def doesNotContain(input: Element): Boolean =
+  final def doesNotContain[Super >: Element](input: Super): Boolean =
     !contains(input)
 
-  final def contains(input: Element): Boolean =
+  final def contains[Super >: Element](input: Super): Boolean =
     exists(_ == input)
 
   final def doesNotExist(predicate: Element => Boolean): Boolean =
@@ -24,7 +24,7 @@ sealed trait Set[Element] extends (Element => Boolean) {
   final def forall(predicate: Element => Boolean): Boolean =
     fold(true)(_ && predicate(_))
 
-  final def add(input: Element): Set[Element] =
+  final def add[Super >: Element](input: Super): Set[Super] =
     fold(NonEmpty(input, empty)) { (acc, current) =>
       if (current == input)
         acc
@@ -32,22 +32,22 @@ sealed trait Set[Element] extends (Element => Boolean) {
         NonEmpty(current, acc)
     }
 
-  final def remove(input: Element): Set[Element] =
-    fold(empty[Element]) { (acc, current) =>
+  final def remove[Super >: Element](input: Super): Set[Super] =
+    fold[Set[Super]](empty) { (acc, current) =>
       if (current == input)
         acc
       else
         NonEmpty(current, acc)
     }
 
-  final def union(that: Set[Element]): Set[Element] =
+  final def union[Super >: Element](that: Set[Super]): Set[Super] =
     fold(that)(_ add _)
 
   final def intersection(predicate: Element => Boolean): Set[Element] =
     filter(predicate)
 
   final def filter(predicate: Element => Boolean): Set[Element] =
-    fold(empty[Element]) { (acc, current) =>
+    fold[Set[Element]](empty) { (acc, current) =>
       if (predicate(current))
         acc.add(current)
       else
@@ -55,7 +55,7 @@ sealed trait Set[Element] extends (Element => Boolean) {
     }
 
   final def difference(predicate: Element => Boolean): Set[Element] =
-    fold(empty[Element]) { (acc, current) =>
+    fold[Set[Element]](empty) { (acc, current) =>
       if (predicate(current))
         acc
       else
@@ -65,7 +65,7 @@ sealed trait Set[Element] extends (Element => Boolean) {
   final def isSubsetOf(predicate: Element => Boolean): Boolean =
     forall(predicate)
 
-  final def isSupersetOf(that: Set[Element]): Boolean =
+  final def isSupersetOf[Super >: Element](that: Set[Super]): Boolean =
     that.isSubsetOf(this)
 
   final override def equals(other: Any): Boolean = other match {
@@ -94,7 +94,7 @@ sealed trait Set[Element] extends (Element => Boolean) {
     }
 
   final def isEmpty: Boolean =
-    this.isInstanceOf[Empty[Element]]
+    this.isInstanceOf[Empty.type]
 
   final def nonEmpty: Boolean =
     !isEmpty
@@ -115,10 +115,10 @@ sealed trait Set[Element] extends (Element => Boolean) {
   }
 
   final def map[Result](function: Element => Result): Set[Result] =
-    fold(empty[Result])(_ add function(_))
+    fold[Set[Result]](empty)(_ add function(_))
 
   final def flatMap[Result](function: Element => Set[Result]): Set[Result] =
-    fold(empty[Result]) { (acc, current) =>
+    fold[Set[Result]](empty) { (acc, current) =>
       function(current).fold(acc)(_ add _)
     }
 
@@ -140,7 +140,7 @@ sealed trait Set[Element] extends (Element => Boolean) {
 
 object Set {
   def apply[Element](element: Element, otherElements: Element*): Set[Element] =
-    otherElements.foldLeft(empty[Element].add(element))(_ add _)
+    otherElements.foldLeft[Set[Element]](empty.add(element))(_ add _)
 
   private final case class NonEmpty[Element](element: Element, otherElements: Set[Element]) extends Set[Element]
 
@@ -149,7 +149,7 @@ object Set {
       patternMatchingNotSupported
   }
 
-  private class Empty[Element] extends Set[Element] {
+  private object Empty extends Set[Nothing] {
     private[this] def unapply(any: Any): Option[(String, Any)] =
       patternMatchingNotSupported
   }
@@ -160,5 +160,8 @@ object Set {
   private[this] def patternMatchingNotSupported: Nothing =
     sys.error("pattern matching on Sets is expensive and therefore not supported")
 
-  def empty[Element]: Set[Element] = new Empty[Element]
+  def empty: Set[Nothing] = Empty
+
+  implicit def SetCanBeUsedAsFunction1[Element](set: Set[Element]): Element => Boolean =
+    set.apply
 }

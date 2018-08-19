@@ -10,6 +10,12 @@ initialCommands in console := "import homegrown.collections._"
 
 addCommandAlias("testc", ";clean;coverage;test;coverageReport")
 
+scalacOptions ++=
+  Seq(
+    "-feature",
+    "-language:implicitConversions"
+  )
+
 libraryDependencies ++=
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test" // http://www.scalatest.org
