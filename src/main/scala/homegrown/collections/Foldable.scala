@@ -11,7 +11,7 @@ trait Foldable[+Element] {
   final def doesNotContain[Super >: Element](input: Super): Boolean =
     !contains(input)
 
-  final def contains[Super >: Element](input: Super): Boolean =
+  def contains[Super >: Element](input: Super): Boolean =
     exists(_ == input)
 
   final def doesNotExist(predicate: Element => Boolean): Boolean =
