@@ -1,6 +1,6 @@
 package homegrown.collections
 
-sealed trait Set[+Element] extends FoldableFactory[Element, Set] {
+sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
   import Set._
 
   final override protected def factory: Factory[Set] =
@@ -11,10 +11,15 @@ sealed trait Set[+Element] extends FoldableFactory[Element, Set] {
 
   @scala.annotation.tailrec
   final override def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
-    if (isEmpty)
-      seed
-    else
-      otherElementsOrThrowException.fold(function(seed, elementOrThrowException))(function)
+    this match {
+      case _: Empty.type =>
+        seed
+
+      case nonEmptySet: NonEmpty[Element] =>
+        val currentResult = function(seed, nonEmptySet.element)
+
+        nonEmptySet.otherElements.fold(currentResult)(function)
+    }
 
   final override def add[Super >: Element](input: Super): Set[Super] =
     fold(NonEmpty(input, empty)) { (acc, current) =>
@@ -60,44 +65,33 @@ sealed trait Set[+Element] extends FoldableFactory[Element, Set] {
   final override def hashCode: Int =
     fold(41)(_ + _.hashCode)
 
-  final override def toString: String =
-    if (isEmpty)
-      "{}"
-    else {
-      val otherElementsSplitByCommaSpace =
-        otherElementsOrThrowException.fold("") { (acc, current) =>
-          s"$acc, $current"
-        }
-
-      "{ " + elementOrThrowException + otherElementsSplitByCommaSpace + " }"
-    }
-
   final def isEmpty: Boolean =
     this.isInstanceOf[Empty.type]
 
   final def nonEmpty: Boolean =
     !isEmpty
 
-  final def isSingleton: Boolean =
-    nonEmpty && otherElementsOrThrowException.isEmpty
+  def isSingleton: Boolean
 
-  def sample: Option[Element] =
-    if (isEmpty)
-      None
-    else
-      Some(elementOrThrowException)
-
-  private[this] lazy val (elementOrThrowException, otherElementsOrThrowException) = {
-    val nonEmptySet = this.asInstanceOf[NonEmpty[Element]]
-    val element = nonEmptySet.element
-    val otherElements = nonEmptySet.otherElements
-
-    element -> otherElements
-  }
+  def sample: Option[Element]
 }
 
 object Set extends Factory[Set] {
-  private final case class NonEmpty[Element](element: Element, otherElements: Set[Element]) extends Set[Element]
+  private final case class NonEmpty[Element](element: Element, otherElements: Set[Element]) extends Set[Element] {
+    final def isSingleton: Boolean =
+      otherElements.isEmpty
+
+    final override def sample: Option[Element] =
+      Some(element)
+
+    final override def toString: String =
+      "{ " + element + otherElementsSplitByCommaSpace(otherElements) + " }"
+
+    private[this] def otherElementsSplitByCommaSpace(input: Set[Element]) =
+      input.fold("") { (acc, current) =>
+        s"$acc, $current"
+      }
+  }
 
   private object NonEmpty {
     // $COVERAGE-OFF$
@@ -107,6 +101,15 @@ object Set extends Factory[Set] {
   }
 
   private object Empty extends Set[Nothing] {
+    final override def isSingleton: Boolean =
+      false
+
+    final override def sample: Option[Nothing] =
+      None
+
+    final override def toString: String =
+      "{}"
+
     // $COVERAGE-OFF$
     private[this] def unapply(any: Any): Option[(String, Any)] =
       patternMatchingNotSupported
