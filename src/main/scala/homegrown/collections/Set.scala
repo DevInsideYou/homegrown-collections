@@ -39,13 +39,13 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
       case Empty =>
         NonEmpty(empty, input, empty)
 
-      case NonEmpty(left, element, right) =>
+      case nonEmpty @ NonEmpty(left, element, right) =>
         if (input == element)
           this
         else if (input.hashCode <= element.hashCode)
-          NonEmpty(left.add(input), element, right)
+          nonEmpty.copy(left = left.add(input))
         else
-          NonEmpty(left, element, right.add(input))
+          nonEmpty.copy(right = right.add(input))
     }
 
   final override def remove[Super >: Element](input: Super): Set[Super] =
@@ -53,13 +53,13 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
       case Empty =>
         empty
 
-      case NonEmpty(left, element, right) =>
+      case nonEmpty @ NonEmpty(left, element, right) =>
         if (input == element)
           left.union(right)
         else if (input.hashCode <= element.hashCode)
-          NonEmpty(left.remove(input), element, right)
+          nonEmpty.copy(left = left.remove(input))
         else
-          NonEmpty(left, element, right.remove(input))
+          nonEmpty.copy(right = right.remove(input))
     }
 
   final def union[Super >: Element](that: Set[Super]): Set[Super] =

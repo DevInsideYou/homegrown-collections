@@ -3,9 +3,6 @@ package homegrown.collections
 sealed abstract class Stack[+Element] {
   import Stack._
 
-  final def `onTopOf:`[Super >: Element](input: Super): Stack[Super] =
-    push(input)
-
   final def push[Super >: Element](input: Super): Stack[Super] =
     NonEmpty(input, this)
 
