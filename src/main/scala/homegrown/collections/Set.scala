@@ -1,5 +1,7 @@
 package homegrown.collections
 
+import Trampoline._
+
 sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
   import Set._
 
@@ -151,22 +153,48 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
     rebuild(path(this))
   }
 
-  final override def add[Super >: Element](input: Super): Set[Super] = {
-    @scala.annotation.tailrec
-    def loop(s: Set[Element], continuation: Set[Super] => Set[Super]): Set[Super] = s match {
-      case Set.Empty() =>
-        continuation(NonEmpty(empty, input, empty))
+  // final override def add[Super >: Element](input: Super): Set[Super] = {
+  //   @scala.annotation.tailrec
+  //   def loop(s: Set[Element], continuation: Set[Super] => Trampoline[Set[Super]]): Trampoline[Set[Super]] = s match {
+  //     case Set.Empty() =>
+  //       continuation(NonEmpty(empty, input, empty))
 
-      case nonEmpty @ Set.NonEmpty(left, element, right) =>
-        if (input == element)
-          continuation(nonEmpty)
-        else if (input.hashCode <= element.hashCode)
-          loop(left, acc => continuation(nonEmpty.copy(left = acc)))
-        else
-          loop(right, acc => continuation(nonEmpty.copy(right = acc)))
+  //     case nonEmpty @ Set.NonEmpty(left, element, right) =>
+  //       if (input == element)
+  //         continuation(nonEmpty)
+  //       else if (input.hashCode <= element.hashCode)
+  //         loop(left, acc => tailcall(continuation(nonEmpty.copy(left = acc))))
+  //       else
+  //         loop(right, acc => tailcall(continuation(nonEmpty.copy(right = acc))))
+  //   }
+
+  //   loop(this, done).result
+  // }
+
+  final override def add[Super >: Element](input: Super): Set[Super] = {
+    var set: Set[Element] = this
+    var continuation: (Set[Super] => Trampoline[Set[Super]]) = done
+
+    while (set.nonEmpty) {
+      val (nonEmpty @ Set.NonEmpty(left, element, right)) = set
+
+      if (input == element)
+        return this // same as continuation(nonEmpty)
+      else {
+        val closedContinuation = continuation
+
+        if (input.hashCode <= element.hashCode) {
+          set = left
+          continuation = acc => tailcall(closedContinuation(nonEmpty.copy(left = acc)))
+        }
+        else {
+          set = right
+          continuation = acc => tailcall(closedContinuation(nonEmpty.copy(right = acc)))
+        }
+      }
     }
 
-    loop(this, identity)
+    continuation(NonEmpty(empty, input, empty)).result
   }
 
   final override def remove[Super >: Element](input: Super): Set[Super] = {
