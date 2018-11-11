@@ -6,7 +6,7 @@ sealed abstract class Stack[+Element] {
   final def push[Super >: Element](input: Super): Stack[Super] =
     NonEmpty(input, this)
 
-  final lazy val (peak, pop) = popElement
+  final lazy val (peek, pop) = popElement
 
   final def popElement: (Option[Element], Stack[Element]) =
     this match {
