@@ -143,6 +143,30 @@ object Fibonacci extends App {
     loop(n, done).result
   }
 
+  def fibonacciTrampolined(n: Long): Long = {
+    def loop(x: Long): Trampoline[Long] =
+      if (x == 0)
+        done(0)
+      else if (x == 1)
+        done(1)
+      else for {
+        acc1 <- tailcall(loop(x - 2))
+        acc2 <- tailcall(loop(x - 1))
+      } yield acc1 + acc2
+
+    // tailcall(loop(x - 2)).flatMap { acc1 =>
+    //   tailcall(loop(x - 1)).map { acc2 =>
+    //     acc1 + acc2
+    //   }
+    // }
+
+    // done {
+    //   tailcall(loop(x - 1)).result + tailcall(loop(x - 2)).result
+    // }
+
+    loop(n).result
+  }
+
   def fibonacciTailRecStack(n: Long): Long = {
     @scala.annotation.tailrec
     def loop(stack: Stack[Long], acc1: Long, acc2: Long): Long = {
@@ -199,23 +223,45 @@ object Fibonacci extends App {
     loop(n, done).result
   }
 
+  def factorialTrampolined(n: Long): Long = {
+    def loop(x: Long): Trampoline[Long] =
+      if (x == 0)
+        done(1)
+      else
+        tailcall(loop(x - 1)).map { acc =>
+          x * acc
+        }
+
+    // done {
+    //   x * tailcall(loop(x - 1)).result
+    // }
+
+    // tailcall(loop(x - 1)).flatMap { acc =>
+    //   done(x * acc)
+    // }
+
+    loop(n).result
+  }
+
   val factis: Seq[Long => Long] =
     Seq(
       // factorial,
-      // factorialCPS //,
-      factorialCPSTrampolined
+      // factorialCPS,
+      // factorialCPSTrampolined,
+      factorialTrampolined
     )
 
   val fibis: Seq[Long => Long] =
     Seq(
       fibonacciOriginal,
-      fibonacciTailRec,
-      fibonacciTailRec2,
-      fibonacciTailRecStackAcc,
-      fibonacciCPSWithHelper,
-      fibonacciTailRecStack,
-      fibonacciCPS,
-      fibonacciCPSTrampolined
+      // fibonacciTailRec,
+      // fibonacciTailRec2,
+      // fibonacciTailRecStackAcc,
+      // fibonacciCPSWithHelper,
+      // fibonacciTailRecStack,
+      // fibonacciCPS,
+      // fibonacciCPSTrampolined,
+      fibonacciTrampolined
     )
 
   def areAllElementsEqual(results: Seq[Long]): Boolean = results match {
@@ -233,32 +279,32 @@ object Fibonacci extends App {
     case _ => tailcall(isEven(n - 1))
   }
 
-  println(isOdd(99999).result)
-  println(isEven(99999).result)
-  println(isOdd(100000).result)
-  println(isEven(100000).result)
+  // println(isOdd(99999).result)
+  // println(isEven(99999).result)
+  // println(isOdd(100000).result)
+  // println(isEven(100000).result)
 
   // println(0 to 9 map isEven mkString "\t")
   // println(0 to 9 map isOdd mkString "\t")
 
-  // (0 to 20)
-  //   .map { n =>
-  //     n -> factis.map(f => f(n))
-  //   }
-  //   .map {
-  //     case (n, results) =>
-  //       val color =
-  //         if (areAllElementsEqual(results))
-  //           Console.GREEN
-  //         else
-  //           Console.RED
+  (0 to 10)
+    .map { n =>
+      n -> fibis.map(f => f(n))
+    }
+    .map {
+      case (n, results) =>
+        val color =
+          if (areAllElementsEqual(results))
+            Console.GREEN
+          else
+            Console.RED
 
-  //       val row =
-  //         (n +: results).mkString("\t")
+        val row =
+          (n +: results).mkString("\t")
 
-  //       color + row + Console.RESET
-  //   }
-  //   .foreach(println)
+        color + row + Console.RESET
+    }
+    .foreach(println)
 
   println("─" * 50)
 }
