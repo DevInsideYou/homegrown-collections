@@ -2,10 +2,6 @@ package homegrown.collections
 
 import Trampoline._
 
-object WhyMe extends App {
-  Set(0, 1 to 99999: _*)
-}
-
 object Fibonacci extends App {
   println("─" * 50)
 
@@ -80,7 +76,6 @@ object Fibonacci extends App {
     continuation(input)
 
   def fibonacciCPSWithHelper(n: Long): Long = {
-    // @scala.annotation.tailrec
     def loop(x: Long): Long = {
       if (x == 0)
         cps(x)(identity[Long])
@@ -227,40 +222,43 @@ object Fibonacci extends App {
     def loop(x: Long): Trampoline[Long] =
       if (x == 0)
         done(1)
-      else
-        tailcall(loop(x - 1)).map { acc =>
-          x * acc
-        }
+      else for {
+        acc <- tailcall(loop(x - 1))
+      } yield x * acc
 
-    // done {
-    //   x * tailcall(loop(x - 1)).result
+    // tailcall(loop(x - 1)).map { acc =>
+    //   x * acc
     // }
 
     // tailcall(loop(x - 1)).flatMap { acc =>
     //   done(x * acc)
     // }
 
+    // done {
+    //   x * tailcall(loop(x - 1)).result
+    // }
+
     loop(n).result
   }
 
-  val factis: Seq[Long => Long] =
+  val factorials: Seq[Long => Long] =
     Seq(
-      // factorial,
-      // factorialCPS,
-      // factorialCPSTrampolined,
+      factorial,
+      factorialCPS,
+      factorialCPSTrampolined,
       factorialTrampolined
     )
 
-  val fibis: Seq[Long => Long] =
+  val fibonaccis: Seq[Long => Long] =
     Seq(
       fibonacciOriginal,
-      // fibonacciTailRec,
-      // fibonacciTailRec2,
-      // fibonacciTailRecStackAcc,
-      // fibonacciCPSWithHelper,
-      // fibonacciTailRecStack,
-      // fibonacciCPS,
-      // fibonacciCPSTrampolined,
+      fibonacciTailRec,
+      fibonacciTailRec2,
+      fibonacciTailRecStackAcc,
+      fibonacciCPSWithHelper,
+      fibonacciTailRecStack,
+      fibonacciCPS,
+      fibonacciCPSTrampolined,
       fibonacciTrampolined
     )
 
@@ -269,42 +267,33 @@ object Fibonacci extends App {
     case Seq(head, tail @ _*) => tail.forall(_ == head)
   }
 
-  def isEven(n: Int): Trampoline[Boolean] = n match {
-    case 0 => done(true)
-    case _ => tailcall(isOdd(n - 1))
+  def createRunFor(range: Range)(fs: Seq[Long => Long]): Unit = {
+    range
+      .map { n =>
+        n -> fs.map(f => f(n))
+      }
+      .map {
+        case (n, results) =>
+          val color =
+            if (areAllElementsEqual(results))
+              Console.GREEN
+            else
+              Console.RED
+
+          val row =
+            (n +: results).mkString("\t")
+
+          color + row + Console.RESET
+      }
+      .foreach(println)
   }
 
-  def isOdd(n: Int): Trampoline[Boolean] = n match {
-    case 0 => done(false)
-    case _ => tailcall(isEven(n - 1))
-  }
+  val run: Seq[Long => Long] => Unit =
+    createRunFor(0 to 10)
 
-  // println(isOdd(99999).result)
-  // println(isEven(99999).result)
-  // println(isOdd(100000).result)
-  // println(isEven(100000).result)
-
-  // println(0 to 9 map isEven mkString "\t")
-  // println(0 to 9 map isOdd mkString "\t")
-
-  (0 to 10)
-    .map { n =>
-      n -> fibis.map(f => f(n))
-    }
-    .map {
-      case (n, results) =>
-        val color =
-          if (areAllElementsEqual(results))
-            Console.GREEN
-          else
-            Console.RED
-
-        val row =
-          (n +: results).mkString("\t")
-
-        color + row + Console.RESET
-    }
-    .foreach(println)
+  run(factorials)
+  println("─" * 50)
+  run(fibonaccis)
 
   println("─" * 50)
 }
