@@ -109,7 +109,7 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
           nonEmpty.copy(right = right.add(input))
     }
 
-  final override def add[Super >: Element](input: Super): Set[Super] = {
+  final /*override*/ def addStack[Super >: Element](input: Super): Set[Super] = {
     def path(set: Set[Element]): Path[Element] = {
       @scala.annotation.tailrec
       def loop(s: Set[Element], path: Path[Element]): Path[Element] = s match {
@@ -151,6 +151,42 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
     rebuild(path(this))
   }
 
+  final override def add[Super >: Element](input: Super): Set[Super] = {
+    @scala.annotation.tailrec
+    def loop(s: Set[Element], continuation: Set[Super] => Set[Super]): Set[Super] = s match {
+      case Set.Empty() =>
+        continuation(NonEmpty(empty, input, empty))
+
+      case nonEmpty @ Set.NonEmpty(left, element, right) =>
+        if (input == element)
+          continuation(nonEmpty)
+        else if (input.hashCode <= element.hashCode)
+          loop(left, acc => continuation(nonEmpty.copy(left = acc)))
+        else
+          loop(right, acc => continuation(nonEmpty.copy(right = acc)))
+    }
+
+    loop(this, identity)
+  }
+
+  final override def remove[Super >: Element](input: Super): Set[Super] = {
+    @scala.annotation.tailrec
+    def loop(s: Set[Element], continuation: Set[Super] => Set[Super]): Set[Super] = s match {
+      case Set.Empty() =>
+        continuation(empty)
+
+      case nonEmpty @ Set.NonEmpty(left, element, right) =>
+        if (input == element)
+          continuation(left.union(right))
+        else if (input.hashCode <= element.hashCode)
+          loop(left, acc => continuation(nonEmpty.copy(left = acc)))
+        else
+          loop(right, acc => continuation(nonEmpty.copy(right = acc)))
+    }
+
+    loop(this, identity)
+  }
+
   final /*override*/ def removeOriginal[Super >: Element](input: Super): Set[Super] =
     this match {
       case Empty =>
@@ -165,7 +201,7 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
           nonEmpty.copy(right = right.remove(input))
     }
 
-  final override def remove[Super >: Element](input: Super): Set[Super] = {
+  final /*override*/ def removeStack[Super >: Element](input: Super): Set[Super] = {
     def path(set: Set[Element]): Path[Element] = {
       @scala.annotation.tailrec
       def loop(s: Set[Element], path: Path[Element]): Path[Element] = s match {
