@@ -26,7 +26,7 @@ trait Foldable[+Element] {
   def forall(predicate: Element => Boolean): Boolean =
     fold(true)(_ && predicate(_))
 
-  final def foreach[Result](function: Element => Result): Unit = {
+  def foreach[Result](function: Element => Result): Unit = {
     fold(()) { (_, current) =>
       function(current)
     }
