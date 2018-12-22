@@ -1,6 +1,8 @@
 package homegrown.collections
 
-final class Set[+Element] private (val tree: Tree[Element]) extends FoldableFactory[Element, Set] {
+final class Set[+Element] private (
+    val tree: Tree[Element]
+) extends FoldableFactory[Element, Set] {
   import Set._
 
   final override protected def factory: Factory[Set] =
