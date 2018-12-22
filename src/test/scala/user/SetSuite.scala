@@ -1,3 +1,5 @@
+package user
+
 import homegrown.collections._
 
 import org.scalatest._
@@ -147,14 +149,14 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("intersection on empty Set should yield an empty Set") {
-    Set.empty.intersection(Set.empty) shouldBe Set.empty
-    Set.empty.intersection(_ => false) shouldBe Set.empty
+    Set.empty.intersection(Set.nothing) shouldBe Set.empty
+    Set.nothing.intersection(_ => false) shouldBe Set.empty
 
-    Set.empty.filter(Set.empty) shouldBe Set.empty
-    Set.empty.filter(_ => false) shouldBe Set.empty
+    Set.empty.filter(Set.nothing) shouldBe Set.empty
+    Set.nothing.filter(_ => false) shouldBe Set.empty
 
-    Set.empty.filterNot(Set.empty) shouldBe Set.empty
-    Set.empty.filterNot(_ => false) shouldBe Set.empty
+    Set.empty.filterNot(Set.nothing) shouldBe Set.empty
+    Set.nothing.filterNot(_ => false) shouldBe Set.empty
   }
 
   test("intersection on a non empty Set with an empty Set should yield an empty Set") {
@@ -195,7 +197,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("difference on empty Set should yield an empty Set") {
-    Set.empty.difference(Set.empty) shouldBe Set.empty
+    Set.empty.difference(Set.nothing) shouldBe Set.empty
   }
 
   test("difference on a non empty Set with an empty Set should yield an empty Set") {
@@ -238,7 +240,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("isSubsetOf on an empty Set should yield true") {
-    Set.empty.isSubsetOf(Set.empty) shouldBe true
+    Set.empty.isSubsetOf(Set.nothing) shouldBe true
     Set.empty.isSubsetOf(Set(randomString)) shouldBe true
   }
 
@@ -448,7 +450,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("foreach on an empty Set should not apply the function") {
-    noException should be thrownBy Set.empty.foreach(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.nothing.foreach(_ => sys.error("should not be thrown"))
   }
 
   test("foreach on a non empty Set should apply the function") {
@@ -506,11 +508,11 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("foreach should be parameterized in the result of the argument function so that it does not produce warnings") {
-    Set.empty.foreach(_ => 1)
+    Set.nothing.foreach(_ => 1)
   }
 
   test("map on an empty Set should not apply the function") {
-    noException should be thrownBy Set.empty.map(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.nothing.map(_ => sys.error("should not be thrown"))
   }
 
   test("map should produce a Set") {
@@ -555,13 +557,13 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("contains on an empty Set should yield false") {
-    Set.empty.contains(randomString) shouldBe false
-    Set.empty.doesNotContain(randomString) shouldBe true
+    Set.nothing.contains(randomString) shouldBe false
+    Set.nothing.doesNotContain(randomString) shouldBe true
   }
 
   test("exists on an empty Set should yield false") {
-    Set.empty.exists(_ => false) shouldBe false
-    Set.empty.doesNotExist(_ => false) shouldBe true
+    Set.nothing.exists(_ => false) shouldBe false
+    Set.nothing.doesNotExist(_ => false) shouldBe true
   }
 
   test("exists on a non empty Set should yield true") {
@@ -595,8 +597,8 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("forall on an empty Set should yield false") {
-    Set.empty.forall(_ => false) shouldBe true
-    Set.empty.notForall(_ => false) shouldBe false
+    Set.nothing.forall(_ => false) shouldBe true
+    Set.nothing.notForall(_ => false) shouldBe false
   }
 
   test("forall on a non empty Set should yield true") {
@@ -613,13 +615,13 @@ class SetSuite extends FunSuite with Matchers {
     Set.empty.toString shouldBe "{}"
   }
 
-  test("toString on a Set with one element should yield {oneElement}") {
+  test("toString on a Set with one element should yield { element }") {
     val element = randomString
 
     Set(element).toString shouldBe s"{ $element }"
   }
 
-  test("toString on a Set with two elements should contain 2 braces, both elements, 2 parens and one comma") {
+  test("toString on a Set with two elements should contain 2 braces, both elements and one comma") {
     val first = randomString
     val second = randomString
 
@@ -640,7 +642,7 @@ class SetSuite extends FunSuite with Matchers {
     actual.count(_ == '}') shouldBe 1
   }
 
-  test("toString on a Set with two elements should contain 2 braces, both elements, 2 parens and two commas") {
+  test("toString on a Set with three elements should contain 2 braces, three elements and two commas") {
     val first = randomString
     val second = randomString
     val third = randomString
@@ -667,39 +669,5 @@ class SetSuite extends FunSuite with Matchers {
 
   test("toString should not produce any commas with leading spaces") {
     Set(1, 0).toString should not include (" ,")
-  }
-
-  private def bothRoles: (Employee, Consultant) =
-    randomEmployee -> randomConsultant
-
-  private def randomEmployee: Employee =
-    Employee(
-      id = randomString
-    )
-
-  private def randomConsultant: Consultant =
-    Consultant(
-      id          = randomString,
-      companyName = randomString
-    )
-
-  private def randomString: String =
-    scala.util.Random.alphanumeric.take(5).mkString
-}
-
-sealed trait CompanyRole {
-  def id: String
-  final def roleName: String = getClass.toString
-}
-
-final case class Employee(id: String) extends CompanyRole {
-  final def takeVacation(): Unit = {
-    println("taking a vacation")
-  }
-}
-
-final case class Consultant(id: String, companyName: String) extends CompanyRole {
-  final def submitInvoice(): Unit = {
-    println("here is my invoice")
   }
 }

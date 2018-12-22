@@ -1,3 +1,5 @@
+package user
+
 import homegrown.collections._
 
 import org.scalatest._

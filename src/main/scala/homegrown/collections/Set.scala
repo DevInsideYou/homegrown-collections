@@ -1,7 +1,5 @@
 package homegrown.collections
 
-import Trampoline._
-
 sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
   import Set._
 
@@ -43,14 +41,14 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
 
       case nonEmpty @ NonEmpty(left, element, right) =>
         if (input == element)
-          this
+          nonEmpty
         else if (input.hashCode <= element.hashCode)
           nonEmpty.copy(left = left.add(input))
         else
           nonEmpty.copy(right = right.add(input))
     }
 
-  final override def remove[Super >: Element](input: Super): Set[Super] =
+  final def remove[Super >: Element](input: Super): Set[Super] =
     this match {
       case Empty =>
         empty
@@ -93,15 +91,40 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
   final override def hashCode: Int =
     fold(41)(_ + _.hashCode)
 
+  final override def toString: String = this match {
+    case Empty() =>
+      "{}"
+
+    case NonEmpty(left, element, right) =>
+      "{ " + element + splitByCommaSpace(left) + splitByCommaSpace(right) + " }"
+  }
+
+  private[this] def splitByCommaSpace(input: Set[Element]) =
+    input.fold("") { (acc, current) =>
+      s"$acc, $current"
+    }
+
   final def isEmpty: Boolean =
     this.isInstanceOf[Empty.type]
 
   final def nonEmpty: Boolean =
     !isEmpty
 
-  def isSingleton: Boolean
+  final def isSingleton: Boolean = this match {
+    case Empty() =>
+      false
 
-  def sample: Option[Element]
+    case NonEmpty(left, _, right) =>
+      left.isEmpty && right.isEmpty
+  }
+
+  final def sample: Option[Element] = this match {
+    case Empty() =>
+      None
+
+    case NonEmpty(_, element, _) =>
+      Some(element)
+  }
 
   final def rendered: String = {
     def leftOrRight(isLeft: Boolean, isFirst: Boolean): String =
@@ -142,21 +165,7 @@ sealed abstract class Set[+Element] extends FoldableFactory[Element, Set] {
 }
 
 object Set extends Factory[Set] {
-  private final case class NonEmpty[+Element](left: Set[Element], element: Element, right: Set[Element]) extends Set[Element] {
-    final def isSingleton: Boolean =
-      left.isEmpty && right.isEmpty
-
-    final override def sample: Option[Element] =
-      Some(element)
-
-    final override def toString: String =
-      "{ " + element + splitByCommaSpace(left) + splitByCommaSpace(right) + " }"
-
-    private[this] def splitByCommaSpace(input: Set[Element]) =
-      input.fold("") { (acc, current) =>
-        s"$acc, $current"
-      }
-  }
+  private final case class NonEmpty[+Element](left: Set[Element], element: Element, right: Set[Element]) extends Set[Element]
 
   private object Empty extends Set[Nothing] {
     /** case Empty => causes stack overflows in methods like fold
@@ -164,18 +173,9 @@ object Set extends Factory[Set] {
       */
     def unapply[Element](set: Set[Element]): Boolean =
       set.isInstanceOf[Empty.type]
-
-    final override def isSingleton: Boolean =
-      false
-
-    final override def sample: Option[Nothing] =
-      None
-
-    final override def toString: String =
-      "{}"
   }
 
-  final override def empty: Set[Nothing] = Empty
+  final override def nothing: Set[Nothing] = Empty
 
   implicit def SetCanBeUsedAsFunction1[Element](set: Set[Element]): Element => Boolean =
     set.apply
