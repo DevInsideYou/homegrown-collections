@@ -2,14 +2,15 @@ package homegrown.collections
 
 final class Map[Key, +Value] private (
     val keys: Set[Key],
-    valueOf: Key => Option[Value]
+    valueOf: Key => Option[Value],
+    default: Option[Key => Value]
 ) extends Function1[Key, Option[Value]]
   with FoldableFactory2[Key, Value, Map] {
   final override protected def factory: Factory2[Map] =
     Map
 
   final override def apply(key: Key): Option[Value] =
-    valueOf(key)
+    valueOf(key) orElse default.map(_ apply key)
 
   final lazy val values: Set[Value] =
     keys.map(unsafeValueOf)
@@ -25,7 +26,7 @@ final class Map[Key, +Value] private (
   final def add[SuperValue >: Value](input: (Key, SuperValue)): Map[Key, SuperValue] = {
     val (key, value) = input
 
-    Map(
+    copy(
       keys    = keys.add(key),
       valueOf = {
         case `key` => Some(value)
@@ -35,7 +36,7 @@ final class Map[Key, +Value] private (
   }
 
   final def remove(key: Key): Map[Key, Value] =
-    Map(
+    copy(
       keys    = keys.remove(key),
       valueOf = {
         case `key` => None
@@ -87,18 +88,47 @@ final class Map[Key, +Value] private (
 
   final def sample: Option[(Key, Value)] =
     keys.sample.map(key => key -> unsafeValueOf(key))
+
+  final def withDefaultValue[SuperValue >: Value](defaultValue: => SuperValue): Map[Key, SuperValue] =
+    withDefault(_ => defaultValue)
+
+  final def withDefault[SuperValue >: Value](default: Key => SuperValue): Map[Key, SuperValue] =
+    copy(default = Some(default))
+
+  final def getOrElseUpdated[SuperValue >: Value](key: Key, newValue: => SuperValue): (SuperValue, Map[Key, SuperValue]) =
+    valueOf(key)
+      .map(_ -> this)
+      .getOrElse {
+        val value = newValue
+
+        value -> add(key -> value)
+      }
+
+  final def mapValues[NewValue](function: Value => NewValue): Map[Key, NewValue] =
+    map {
+      case (key, value) => key -> function(value)
+    }
+
+  private[this] final def copy[SuperValue >: Value](
+      keys: Set[Key] = keys,
+      valueOf: Key => Option[SuperValue] = valueOf,
+      default: Option[Key => SuperValue] = default
+  ): Map[Key, SuperValue] =
+    Map(keys, valueOf, default)
 }
 
 object Map extends Factory2[Map] {
   final override def empty[Key, Value]: Map[Key, Value] =
     apply(
       keys    = Set.empty,
-      valueOf = _ => None
+      valueOf = _ => None,
+      default = None
     )
 
   private def apply[Key, Value](
       keys: Set[Key],
-      valueOf: Key => Option[Value]
+      valueOf: Key => Option[Value],
+      default: Option[Key => Value]
   ): Map[Key, Value] =
-    new Map(keys, valueOf)
+    new Map(keys, valueOf, default)
 }

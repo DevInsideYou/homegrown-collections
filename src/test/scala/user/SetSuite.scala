@@ -5,6 +5,8 @@ import homegrown.collections._
 import org.scalatest._
 
 class SetSuite extends FunSuite with Matchers {
+  import SetSuite._
+
   test("apply on an empty Set should yield false") {
     Set.empty(randomString) shouldBe false
     Set.empty.size shouldBe 0
@@ -670,4 +672,57 @@ class SetSuite extends FunSuite with Matchers {
   test("toString should not produce any commas with leading spaces") {
     Set(1, 0).toString should not include (" ,")
   }
+
+  test("groupBy on an empty Set should produce an empty Map") {
+    Set
+      .empty[Int]
+      .groupBy(_.toString) shouldBe Map.empty[String, Set[Int]]
+  }
+
+  test("groupBy on a nonEmpty Set should produce a Map from key: Key to value: Set[Element") {
+    Set(1, 2, 3, 4)
+      .groupBy(_ % 2 == 0) shouldBe Map(
+        true -> Set(2, 4),
+        false -> Set(1, 3)
+      )
+
+    val alice = Person("Alice", age = 27)
+    val bob = Person("Bob", age = 25)
+    val carol = Person("Carol", age = 27)
+    val daniel = Person("Daniel", age = 27)
+
+    val peopleWhoAreXYearsOld =
+      Set(
+        alice,
+        bob,
+        carol,
+        daniel
+      ).groupBy(_.age).withDefaultValue(Set.empty)
+
+    peopleWhoAreXYearsOld shouldBe Map(
+      25 -> Set(bob),
+      27 -> Set(alice, carol, daniel)
+    )
+
+    peopleWhoAreXYearsOld(10) shouldBe Some(Set.empty)
+    peopleWhoAreXYearsOld(25) shouldBe Some(Set(bob))
+    peopleWhoAreXYearsOld(27) shouldBe Some(Set(alice, carol, daniel))
+
+    peopleWhoAreXYearsOld.map {
+      case (age, people) => age -> people.size
+    } shouldBe Map(
+      25 -> 1,
+      27 -> 3
+    )
+
+    peopleWhoAreXYearsOld
+      .mapValues(_.size) shouldBe Map(
+        25 -> 1,
+        27 -> 3
+      )
+  }
+}
+
+object SetSuite {
+  final case class Person(name: String, age: Int)
 }

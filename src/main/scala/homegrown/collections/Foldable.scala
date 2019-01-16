@@ -31,4 +31,17 @@ trait Foldable[+Element] {
       function(current)
     }
   }
+
+  final def groupBy[Key](key: Element => Key): Map[Key, Set[Element]] =
+    fold[Map[Key, Set[Element]]](Map.empty) { (acc, current) =>
+      val k: Key =
+        key(current)
+
+      val value: Set[Element] =
+        acc(k)
+          .map(_.add(current))
+          .getOrElse(Set(current))
+
+      acc.add(k -> value)
+    }
 }

@@ -1,3 +1,5 @@
+import scala.util.Random
+
 package object user {
   def bothRoles: (Employee, Consultant) =
     randomEmployee -> randomConsultant
@@ -14,5 +16,8 @@ package object user {
     )
 
   def randomString: String =
-    scala.util.Random.alphanumeric.take(5).mkString
+    Random.alphanumeric.take(5).mkString
+
+  def randomInt: Int =
+    Random.nextInt
 }
