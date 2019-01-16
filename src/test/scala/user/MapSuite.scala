@@ -6,7 +6,7 @@ import org.scalatest._
 
 class MapSuite extends FunSuite with Matchers {
   test("apply on an empty Map should yield None") {
-    Map.empty(randomString) shouldBe None // good that we moved randomString to the package object
+    Map.empty(randomString) shouldBe None
     Map.empty.keys.size shouldBe 0
   }
 
@@ -662,7 +662,7 @@ class MapSuite extends FunSuite with Matchers {
       "world" -> "whatever"
     ).map {
         case (key, value) => key.size -> value.size
-      } shouldBe Map(5 -> 8) // note that the resulting map has only 1 key instead of 2
+      } shouldBe Map(5 -> 8)
   }
 
   test("flatMap should be able to produce a chessboard") {

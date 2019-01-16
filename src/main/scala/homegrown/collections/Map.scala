@@ -1,7 +1,7 @@
 package homegrown.collections
 
 final class Map[Key, +Value] private (
-    val keys: Set[Key], // domain
+    val keys: Set[Key],
     valueOf: Key => Option[Value]
 ) extends Function1[Key, Option[Value]]
   with FoldableFactory2[Key, Value, Map] {
