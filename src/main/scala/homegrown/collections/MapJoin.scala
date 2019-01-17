@@ -1,0 +1,147 @@
+package homegrown.collections
+
+object MapJoin {
+  final implicit class DSL[Key, ThisValue](private val self: Map[Key, ThisValue]) {
+    def join[ThatValue](that: Map[Key, ThatValue]): Join[Key, ThisValue, ThatValue] =
+      new Join(self, that)
+
+    class Join[Key, ThisValue, ThatValue](
+        self: Map[Key, ThisValue],
+        that: Map[Key, ThatValue]
+    ) {
+      def inner: Map[Key, (ThisValue, ThatValue)] =
+        inner(T2)
+
+      def inner[TargetValue](factory: (ThisValue, ThatValue) => TargetValue): Map[Key, TargetValue] =
+        self.fold[Map[Key, TargetValue]](Map.empty) {
+          case (acc, (thisKey, thisValue)) =>
+            that(thisKey)
+              .map { thatValue =>
+                acc.add(thisKey -> factory(thisValue, thatValue))
+              }
+              .getOrElse {
+                acc
+              }
+        }
+
+      def leftOuter: Map[Key, (ThisValue, Option[ThatValue])] =
+        leftOuter(T2)
+
+      def leftOuter[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
+        self.fold[Map[Key, TargetValue]](Map.empty) {
+          case (acc, (thisKey, thisValue)) =>
+            that(thisKey)
+              .map { thatValue =>
+                acc.add(thisKey -> factory(thisValue, Some(thatValue)))
+              }
+              .getOrElse {
+                acc.add(thisKey -> factory(thisValue, None))
+              }
+        }
+
+      def leftOnly: Map[Key, (ThisValue, Option[ThatValue])] =
+        leftOnly(T2)
+
+      def leftOnly[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
+        self.fold[Map[Key, TargetValue]](Map.empty) {
+          case (acc, (thisKey, thisValue)) =>
+            that(thisKey)
+              .map { thatValue =>
+                acc
+              }
+              .getOrElse {
+                acc.add(thisKey -> factory(thisValue, None))
+              }
+        }
+
+      def rightOuter: Map[Key, (Option[ThisValue], ThatValue)] =
+        rightOuter(T2)
+
+      def rightOuter[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
+        that.fold[Map[Key, TargetValue]](Map.empty) {
+          case (acc, (thatKey, thatValue)) =>
+            self(thatKey)
+              .map { thisValue =>
+                acc.add(thatKey -> factory(Some(thisValue), thatValue))
+              }
+              .getOrElse {
+                acc.add(thatKey -> factory(None, thatValue))
+              }
+        }
+
+      def rightOnly: Map[Key, (Option[ThisValue], ThatValue)] =
+        rightOnly(T2)
+
+      def rightOnly[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
+        that.fold[Map[Key, TargetValue]](Map.empty) {
+          case (acc, (thatKey, thatValue)) =>
+            self(thatKey)
+              .map { thisValue =>
+                acc
+              }
+              .getOrElse {
+                acc.add(thatKey -> factory(None, thatValue))
+              }
+        }
+
+      def fullOuter: Map[Key, (Option[ThisValue], Option[ThatValue])] =
+        fullOuter(T2)
+
+      def fullOuter[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
+        val left =
+          self.fold[Map[Key, TargetValue]](Map.empty) {
+            case (acc, (thisKey, thisValue)) =>
+              that(thisKey)
+                .map { thatValue =>
+                  acc.add(thisKey -> factory(Some(thisValue), Some(thatValue)))
+                }
+                .getOrElse {
+                  acc.add(thisKey -> factory(Some(thisValue), None))
+                }
+          }
+
+        that.fold[Map[Key, TargetValue]](left) {
+          case (acc, (thatKey, thatValue)) =>
+            self(thatKey)
+              .map { thisValue =>
+                acc
+              }
+              .getOrElse {
+                acc.add(thatKey -> factory(None, Some(thatValue)))
+              }
+        }
+      }
+
+      def outer: Map[Key, (Option[ThisValue], Option[ThatValue])] =
+        outer(T2)
+
+      def outer[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
+        val left =
+          self.fold[Map[Key, TargetValue]](Map.empty) {
+            case (acc, (thisKey, thisValue)) =>
+              that(thisKey)
+                .map { thatValue =>
+                  acc
+                }
+                .getOrElse {
+                  acc.add(thisKey -> factory(Some(thisValue), None))
+                }
+          }
+
+        that.fold[Map[Key, TargetValue]](left) {
+          case (acc, (thatKey, thatValue)) =>
+            self(thatKey)
+              .map { thisValue =>
+                acc
+              }
+              .getOrElse {
+                acc.add(thatKey -> factory(None, Some(thatValue)))
+              }
+        }
+      }
+    }
+  }
+
+  private def T2[First, Second]: (First, Second) => Tuple2[First, Second] =
+    Tuple2.apply
+}
