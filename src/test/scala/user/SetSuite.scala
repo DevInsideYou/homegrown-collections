@@ -679,7 +679,7 @@ class SetSuite extends FunSuite with Matchers {
       .groupBy(_.toString) shouldBe Map.empty[String, Set[Int]]
   }
 
-  test("groupBy on a nonEmpty Set should produce a Map from key: Key to value: Set[Element") {
+  test("groupBy on a nonEmpty Set should produce a Map from key: Key to value: Set[Element]") {
     Set(1, 2, 3, 4)
       .groupBy(_ % 2 == 0) shouldBe Map(
         true -> Set(2, 4),

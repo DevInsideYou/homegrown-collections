@@ -684,7 +684,7 @@ class MapSuite extends FunSuite with Matchers {
     )
   }
 
-  test("withDefault should return a default value dependent on the key for all keys withou values") {
+  test("withDefault should return a default value dependent on the key for all keys without values") {
     def defaultValueOf(key: Int): String =
       (key + 1).toString
 
