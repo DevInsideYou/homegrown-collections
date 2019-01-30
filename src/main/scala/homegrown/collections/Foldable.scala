@@ -45,3 +45,18 @@ trait Foldable[+Element] {
       acc.add(k -> value)
     }
 }
+
+object Foldable {
+  implicit def viewFromTraversableToFoldableFromHGC[Element](from: Traversable[Element]): Foldable[Element] =
+    new Foldable[Element] {
+      final override def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
+        from.foldLeft(seed)(function)
+    }
+
+  implicit def viewFromFoldableToTraversableFromHGC[Element](from: Foldable[Element]): Traversable[Element] =
+    new Traversable[Element] {
+      final override def foreach[Result](function: Element => Result): Unit = {
+        from.foreach(function)
+      }
+    }
+}

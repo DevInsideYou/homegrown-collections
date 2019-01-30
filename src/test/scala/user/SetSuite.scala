@@ -541,6 +541,74 @@ class SetSuite extends FunSuite with Matchers {
     chessboard.size shouldBe 64
   }
 
+  test("flatMap") {
+    val characters = Set('a', 'b')
+    val numbers = List(1, 2)
+
+    // val partialChessboard: Set[(Char, Int)] =
+    //   characters.flatMap { c =>
+    //     numbers.map { n =>
+    //       c -> n
+    //     }
+    //   }
+
+    val partialChessboard: Set[(Char, Int)] =
+      for {
+        c <- characters
+        n <- numbers
+      } yield c -> n
+
+    partialChessboard shouldBe Set(
+      'a' -> 1,
+      'a' -> 2,
+      'b' -> 1,
+      'b' -> 2
+    )
+  }
+
+  test("flatMap map") {
+    val characters = Set('a', 'b')
+    val numbers = Map(1 -> "I", 2 -> "II")
+
+    val partialChessboard: Set[(Char, (Int, String))] =
+      characters.flatMap { c =>
+        numbers.map { n =>
+          c -> n
+        }
+      }
+
+    partialChessboard shouldBe Set(
+      'a' -> (2 -> "II"),
+      'b' -> (2 -> "II")
+    )
+  }
+
+  test("flatten") {
+    Predef.Set[Predef.Set[Int]](
+      Predef.Set[Int](1, 2, 3),
+      Predef.Set(4, 5, 6),
+      Predef.Set(7, 8, 9)
+    ).flatten shouldBe Predef.Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+    Set[Set[Int]](
+      Set[Int](1, 2, 3),
+      Set(4, 5, 6),
+      Set(7, 8, 9)
+    ).flatten shouldBe Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+    Set(
+      List(1, 2, 3),
+      List(4, 5, 6),
+      List(7, 8, 9)
+    ).flatten shouldBe Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+    List(
+      Set(1, 2, 3),
+      Set(4, 5, 6),
+      Set(7, 8, 9)
+    ).flatten shouldBe List(1, 2, 3, 4, 5, 6, 7, 8, 9)
+  }
+
   test("Set should be a Function") {
     val orderedClassmates =
       Seq("alice", "bob", "frank")

@@ -23,9 +23,14 @@ trait FoldableFactory2[Key, +Value, SubtypeOfFoldableFactory[Key, +Value] <: Fol
   def map[ResultKey, ResultValue](function: Tuple2[Key, Value] => Tuple2[ResultKey, ResultValue]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
     fold[SubtypeOfFoldableFactory[ResultKey, ResultValue]](factory.empty)(_ add function(_))
 
-  def flatMap[ResultKey, ResultValue](function: Tuple2[Key, Value] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
+  def flatMap[ResultKey, ResultValue, F[_]](function: Tuple2[Key, Value] => F[Tuple2[ResultKey, ResultValue]])(implicit view: F[Tuple2[ResultKey, ResultValue]] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
     fold[SubtypeOfFoldableFactory[ResultKey, ResultValue]](factory.empty) { (acc, current) =>
-      function(current).fold(acc)(_ add _)
+      view(function(current)).fold(acc)(_ add _)
+    }
+
+  def flatten[ResultKey, ResultValue](implicit view: Tuple2[Key, Value] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
+    fold[SubtypeOfFoldableFactory[ResultKey, ResultValue]](factory.empty) { (acc, current) =>
+      view(current).fold(acc)(_ add _)
     }
 }
 
@@ -49,10 +54,10 @@ object FoldableFactory2 {
           acc
       }
 
-    final def flatMap[ResultKey, ResultValue](function: Tuple2[Key, Value] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
+    def flatMap[ResultKey, ResultValue, F[_]](function: Tuple2[Key, Value] => F[Tuple2[ResultKey, ResultValue]])(implicit view: F[Tuple2[ResultKey, ResultValue]] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
       foldableFactory.fold[SubtypeOfFoldableFactory[ResultKey, ResultValue]](foldableFactory.factory.empty) { (acc, current) =>
         if (predicate(current))
-          function(current).fold(acc)(_ add _)
+          view(function(current)).fold(acc)(_ add _)
         else
           acc
       }
