@@ -23,9 +23,9 @@ trait FoldableFactory[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFa
   def map[Result](function: Element => Result): SubtypeOfFoldableFactory[Result] =
     fold[SubtypeOfFoldableFactory[Result]](factory.empty)(_ add function(_))
 
-  def flatMap[Result, F[_]](function: Element => F[Result])(implicit view: F[Result] => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
+  def flatMap[Result](function: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
     fold[SubtypeOfFoldableFactory[Result]](factory.empty) { (acc, current) =>
-      view(function(current)).fold(acc)(_ add _)
+      function(current).fold(acc)(_ add _)
     }
 
   def flatten[Result](implicit view: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
@@ -54,10 +54,10 @@ object FoldableFactory {
           acc
       }
 
-    final def flatMap[Result, F[_]](function: Element => F[Result])(implicit view: F[Result] => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
+    final def flatMap[Result](function: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
       foldableFactory.fold[SubtypeOfFoldableFactory[Result]](foldableFactory.factory.empty) { (acc, current) =>
         if (predicate(current))
-          view(function(current)).fold(acc)(_ add _)
+          function(current).fold(acc)(_ add _)
         else
           acc
       }
