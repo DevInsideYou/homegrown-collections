@@ -119,7 +119,7 @@ class SetSuite extends FunSuite with Matchers {
 
     first should not be second
 
-    val emptySet = Set.empty
+    val emptySet = Set.empty[String]
     val nonEmptySet = Set(first, second)
 
     emptySet.union(nonEmptySet)(first) shouldBe true
@@ -142,23 +142,15 @@ class SetSuite extends FunSuite with Matchers {
     right.union(left) shouldBe Set(a, b, c).add(d)
   }
 
-  test("union with variance") {
-    val (employee, consultant) = bothRoles
-
-    Set(employee).union(Set(consultant)) shouldBe Set(employee, consultant)
-
-    Set[Employee](employee).add(consultant: CompanyRole) shouldBe Set[CompanyRole](employee, consultant)
-  }
-
   test("intersection on empty Set should yield an empty Set") {
-    Set.empty.intersection(Set.nothing) shouldBe Set.empty
-    Set.nothing.intersection(_ => false) shouldBe Set.empty
+    Set.empty[String].intersection(Set.empty[String]) shouldBe Set.empty
+    Set.empty[String].intersection(_ => false) shouldBe Set.empty
 
-    Set.empty.filter(Set.nothing) shouldBe Set.empty
-    Set.nothing.filter(_ => false) shouldBe Set.empty
+    Set.empty[String].filter(Set.empty[String]) shouldBe Set.empty
+    Set.empty[String].filter(_ => false) shouldBe Set.empty
 
-    Set.empty.filterNot(Set.nothing) shouldBe Set.empty
-    Set.nothing.filterNot(_ => false) shouldBe Set.empty
+    Set.empty[String].filterNot(Set.empty[String]) shouldBe Set.empty
+    Set.empty[String].filterNot(_ => false) shouldBe Set.empty
   }
 
   test("intersection on a non empty Set with an empty Set should yield an empty Set") {
@@ -167,7 +159,7 @@ class SetSuite extends FunSuite with Matchers {
 
     first should not be second
 
-    val emptySet = Set.empty
+    val emptySet = Set.empty[String]
     val nonEmptySet = Set(first, second)
 
     emptySet.intersection(nonEmptySet)(first) shouldBe false
@@ -199,7 +191,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("difference on empty Set should yield an empty Set") {
-    Set.empty.difference(Set.nothing) shouldBe Set.empty
+    Set.empty[String].difference(Set.empty[String]) shouldBe Set.empty
   }
 
   test("difference on a non empty Set with an empty Set should yield an empty Set") {
@@ -208,7 +200,7 @@ class SetSuite extends FunSuite with Matchers {
 
     first should not be second
 
-    val emptySet = Set.empty
+    val emptySet = Set.empty[String]
     val nonEmptySet = Set(first, second)
 
     emptySet.difference(nonEmptySet)(first) shouldBe false
@@ -231,18 +223,8 @@ class SetSuite extends FunSuite with Matchers {
     right.difference(left) shouldBe Set(d)
   }
 
-  test("difference on two sets with different types should yield a Set with the common type") {
-    val (employee, consultant) = bothRoles
-
-    val employeeSet = Set(employee)
-    val consultantSet = Set(consultant)
-
-    employeeSet.difference(consultantSet) shouldBe employeeSet
-    consultantSet.difference(employeeSet) shouldBe consultantSet
-  }
-
   test("isSubsetOf on an empty Set should yield true") {
-    Set.empty.isSubsetOf(Set.nothing) shouldBe true
+    Set.empty[String].isSubsetOf(Set.empty[String]) shouldBe true
     Set.empty.isSubsetOf(Set(randomString)) shouldBe true
   }
 
@@ -452,7 +434,7 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("foreach on an empty Set should not apply the function") {
-    noException should be thrownBy Set.nothing.foreach(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.empty[String].foreach(_ => sys.error("should not be thrown"))
   }
 
   test("foreach on a non empty Set should apply the function") {
@@ -510,11 +492,11 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("foreach should be parameterized in the result of the argument function so that it does not produce warnings") {
-    Set.nothing.foreach(_ => 1)
+    Set.empty[String].foreach(_ => 1)
   }
 
   test("map on an empty Set should not apply the function") {
-    noException should be thrownBy Set.nothing.map(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.empty[String].map(_ => sys.error("should not be thrown"))
   }
 
   test("map should produce a Set") {
@@ -627,13 +609,13 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("contains on an empty Set should yield false") {
-    Set.nothing.contains(randomString) shouldBe false
-    Set.nothing.doesNotContain(randomString) shouldBe true
+    Set.empty.contains(randomString) shouldBe false
+    Set.empty.doesNotContain(randomString) shouldBe true
   }
 
   test("exists on an empty Set should yield false") {
-    Set.nothing.exists(_ => false) shouldBe false
-    Set.nothing.doesNotExist(_ => false) shouldBe true
+    Set.empty[String].exists(_ => false) shouldBe false
+    Set.empty[String].doesNotExist(_ => false) shouldBe true
   }
 
   test("exists on a non empty Set should yield true") {
@@ -646,29 +628,9 @@ class SetSuite extends FunSuite with Matchers {
     Set(element).doesNotExist(_.size != element.size) shouldBe true
   }
 
-  test("exists with variance") {
-    val (employee, consultant) = bothRoles
-
-    Set(employee).exists(_ == employee) shouldBe true
-    // Set(employee).exists(_ == consultant) shouldBe false // compiles :( with a warning :)
-
-    Set[Employee](employee).exists(_ == employee) shouldBe true
-    Set[CompanyRole](employee).exists(_ == employee) shouldBe true
-
-    Set[Employee](employee).exists((input: Employee) => input == employee) shouldBe true
-    Set[Employee](employee).exists((input: CompanyRole) => input == employee) shouldBe true
-    Set[CompanyRole](employee).exists((input: CompanyRole) => input == employee) shouldBe true
-    "Set[CompanyRole](employee).exists((input: Employee) => input == employee)" shouldNot typeCheck
-
-    Set[Employee](employee).exists(Set[Employee](employee)) shouldBe true
-    Set[Employee](employee).exists(Set[CompanyRole](employee)) shouldBe true
-    Set[CompanyRole](employee).exists(Set[CompanyRole](employee)) shouldBe true
-    Set[CompanyRole](employee).exists(Set[Employee](employee)) shouldBe true
-  }
-
   test("forall on an empty Set should yield false") {
-    Set.nothing.forall(_ => false) shouldBe true
-    Set.nothing.notForall(_ => false) shouldBe false
+    Set.empty[String].forall(_ => false) shouldBe true
+    Set.empty[String].notForall(_ => false) shouldBe false
   }
 
   test("forall on a non empty Set should yield true") {

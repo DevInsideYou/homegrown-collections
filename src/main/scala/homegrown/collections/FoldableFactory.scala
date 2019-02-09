@@ -1,10 +1,10 @@
 package homegrown.collections
 
-trait FoldableFactory[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]]
+trait FoldableFactory[Element, SubtypeOfFoldableFactory[Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]]
   extends Foldable[Element] {
   protected def factory: Factory[SubtypeOfFoldableFactory]
 
-  def add[Super >: Element](input: Super): SubtypeOfFoldableFactory[Super]
+  def add(input: Element): SubtypeOfFoldableFactory[Element]
 
   final def filterNot(predicate: Element => Boolean): SubtypeOfFoldableFactory[Element] =
     filter(!predicate(_))
@@ -35,7 +35,7 @@ trait FoldableFactory[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFa
 }
 
 object FoldableFactory {
-  final class Wrapper[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]](
+  final class Wrapper[Element, SubtypeOfFoldableFactory[Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]](
       foldableFactory: FoldableFactory[Element, SubtypeOfFoldableFactory],
       predicate: Element => Boolean
   ) {

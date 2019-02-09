@@ -331,8 +331,8 @@ class MapSuite extends FunSuite with Matchers {
   }
 
   test("contains on an empty Map should yield false") {
-    Map.empty.contains(randomString) shouldBe false
-    Map.empty.doesNotContain(randomString) shouldBe true
+    Map.empty[String, String].contains(randomString -> randomString) shouldBe false
+    Map.empty[String, String].doesNotContain(randomString -> randomString) shouldBe true
   }
 
   test("exists on an empty Map should yield false") {
@@ -348,27 +348,6 @@ class MapSuite extends FunSuite with Matchers {
 
     Map(element -> randomString).doesNotExist(_._1.size == element.size) shouldBe false
     Map(element -> randomString).doesNotExist(_._1.size != element.size) shouldBe true
-  }
-
-  test("exists with variance") {
-    val (employee, consultant) = bothRoles
-
-    Map(employee -> employee).exists(_._2 == employee) shouldBe true
-    // Map(employee -> employee).exists(_._2 == consultant) shouldBe false // compiles :( with a warning :)
-
-    Map[Employee, Employee](employee -> employee).exists(_._2 == employee) shouldBe true
-    Map[Employee, CompanyRole](employee -> employee).exists(_._2 == employee) shouldBe true
-
-    Map[Employee, Employee](employee -> employee).exists((input: (Employee, Employee)) => input._2 == employee) shouldBe true
-    Map[Employee, Employee](employee -> employee).exists((input: (Employee, CompanyRole)) => input._2 == employee) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists((input: (CompanyRole, CompanyRole)) => input._2 == employee) shouldBe true
-    "Map[CompanyRole, CompanyRole](employee -> employee).exists((input: (CompanyRole, Employee)) => input._2 == employee)" shouldNot typeCheck
-
-    Map[Employee, Employee](employee -> employee).exists(Set[(Employee, Employee)](employee -> employee)) shouldBe true
-    Map[Employee, Employee](employee -> employee).exists(Set[(Employee, CompanyRole)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set[(CompanyRole, CompanyRole)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set[(CompanyRole, Employee)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set(employee -> employee)) shouldBe true
   }
 
   test("forall on an empty Map should yield false") {

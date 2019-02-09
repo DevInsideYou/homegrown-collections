@@ -1,6 +1,6 @@
 package homegrown.collections
 
-final class Map[Key, +Value] private (
+final class Map[Key, Value] private (
     val keys: Set[Key],
     valueOf: Key => Option[Value],
     default: Option[Key => Value]
@@ -23,7 +23,7 @@ final class Map[Key, +Value] private (
       function(acc, currentKey -> unsafeValueOf(currentKey))
     }
 
-  final def add[SuperValue >: Value](input: (Key, SuperValue)): Map[Key, SuperValue] = {
+  final def add(input: (Key, Value)): Map[Key, Value] = {
     val (key, value) = input
 
     copy(
@@ -44,12 +44,12 @@ final class Map[Key, +Value] private (
       }
     )
 
-  final def isSubsetOf[SuperValue >: Value](that: Map[Key, SuperValue]): Boolean =
+  final def isSubsetOf(that: Map[Key, Value]): Boolean =
     forall {
       case (key, value) => that(key) == Some(value)
     }
 
-  final def isSupersetOf[SuperValue >: Value](that: Map[Key, SuperValue]): Boolean =
+  final def isSupersetOf(that: Map[Key, Value]): Boolean =
     that.isSubsetOf(this)
 
   final override def equals(other: Any): Boolean =
@@ -62,7 +62,7 @@ final class Map[Key, +Value] private (
     fold(41)(_ + _.hashCode)
 
   final override def toString: String = keys.tree match {
-    case Tree.Empty =>
+    case Tree.Empty() =>
       "Map()"
 
     case Tree.NonEmpty(left, key, right) =>
@@ -89,13 +89,13 @@ final class Map[Key, +Value] private (
   final def sample: Option[(Key, Value)] =
     keys.sample.map(key => key -> unsafeValueOf(key))
 
-  final def withDefaultValue[SuperValue >: Value](defaultValue: => SuperValue): Map[Key, SuperValue] =
+  final def withDefaultValue(defaultValue: => Value): Map[Key, Value] =
     withDefault(_ => defaultValue)
 
-  final def withDefault[SuperValue >: Value](default: Key => SuperValue): Map[Key, SuperValue] =
+  final def withDefault(default: Key => Value): Map[Key, Value] =
     copy(default = Some(default))
 
-  final def getOrElseUpdated[SuperValue >: Value](key: Key, newValue: => SuperValue): (SuperValue, Map[Key, SuperValue]) =
+  final def getOrElseUpdated(key: Key, newValue: => Value): (Value, Map[Key, Value]) =
     valueOf(key)
       .map(_ -> this)
       .getOrElse {
@@ -119,11 +119,11 @@ final class Map[Key, +Value] private (
       case (_, value) => predicate(value)
     }
 
-  private[this] final def copy[SuperValue >: Value](
+  private[this] final def copy(
       keys: Set[Key] = keys,
-      valueOf: Key => Option[SuperValue] = valueOf,
-      default: Option[Key => SuperValue] = default
-  ): Map[Key, SuperValue] =
+      valueOf: Key => Option[Value] = valueOf,
+      default: Option[Key => Value] = default
+  ): Map[Key, Value] =
     Map(keys, valueOf, default)
 }
 

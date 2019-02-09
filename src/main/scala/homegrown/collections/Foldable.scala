@@ -1,6 +1,6 @@
 package homegrown.collections
 
-trait Foldable[+Element] {
+trait Foldable[Element] {
   def fold[Result](seed: Result)(function: (Result, Element) => Result): Result
 
   def size: Int =
@@ -8,10 +8,10 @@ trait Foldable[+Element] {
       acc + 1
     }
 
-  final def doesNotContain[Super >: Element](input: Super): Boolean =
+  final def doesNotContain(input: Element): Boolean =
     !contains(input)
 
-  def contains[Super >: Element](input: Super): Boolean =
+  def contains(input: Element): Boolean =
     exists(_ == input)
 
   final def doesNotExist(predicate: Element => Boolean): Boolean =
