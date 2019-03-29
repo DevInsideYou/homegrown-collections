@@ -2,9 +2,7 @@ package user
 
 import homegrown.collections._
 
-import org.scalatest._
-
-class ReferentialTransparencySuite extends FunSuite with Matchers {
+class ReferentialTransparencySuite extends TestSuite {
   import Map.PotentiallyDangerousImplicits._
 
   ignore("hello world") {

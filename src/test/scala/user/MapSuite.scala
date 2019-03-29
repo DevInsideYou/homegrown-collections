@@ -2,9 +2,7 @@ package user
 
 import homegrown.collections._
 
-import org.scalatest._
-
-class MapSuite extends FunSuite with Matchers {
+class MapSuite extends TestSuite {
   test("apply on an empty Map should yield None") {
     Map.empty(randomString) shouldBe None
     Map.empty.keys.size shouldBe 0

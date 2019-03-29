@@ -2,26 +2,26 @@ package user
 
 import homegrown.collections._
 
-import org.scalatest._
-
-class SetSuite extends FunSuite with Matchers {
+class SetSuite extends TestSuite {
   import SetSuite._
 
   test("apply on an empty Set should yield false") {
-    Set.empty(randomString) shouldBe false
+    forAll { randomString: String =>
+      Set.empty(randomString) shouldBe false
+    }
+
     Set.empty.size shouldBe 0
   }
 
   test("add on an empty Set should yield a new Set with one element") {
-    val first = randomString
-    val second = randomString
+    forAll { distinct: Distinct.Two[String] =>
+      import distinct._
 
-    first should not be second
+      val set = Set(first)
 
-    val set = Set(first)
-
-    set(first) shouldBe true
-    set(second) shouldBe false
+      set(first) shouldBe true
+      set(second) shouldBe false
+    }
   }
 
   test("add on a non empty Set should yield a new Set with two elements") {
@@ -105,8 +105,23 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("remove should remove elements from both sides of the tree") {
-    Set(1, 2, 3).remove(3) shouldBe Set(1, 2)
-    Set(1, -2, -3).remove(-3) shouldBe Set(1, -2)
+    def run(ordered: List[Int]): Any = {
+      import ordered._
+
+      val allExceptLast = ordered.dropRight(1)
+
+      Set(head, tail: _*).remove(last) shouldBe Set(head, allExceptLast: _*)
+    }
+
+    forAll { numbers: List[Int] =>
+      val orderedAsc = numbers.distinct.sorted
+      val orderedDsc = orderedAsc.reverse
+
+      whenever(orderedAsc.size >= 3) {
+        run(orderedAsc)
+        run(orderedDsc)
+      }
+    }
   }
 
   test("union on empty Set should yield an empty Set") {
@@ -130,16 +145,16 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("union on two non empty Sets should yield their union") {
-    val a = randomString
-    val b = randomString
-    val c = randomString
-    val d = randomString
+    forAll { distinct: Distinct.Four[String] =>
+      val Distinct.Four(a, b, c, d) = distinct
 
-    val left = Set(a, b)
-    val right = Set.empty.add(c).add(d)
+      val left = Set(a, b)
+      val right = Set(c, d)
+      val union = Set(a, b, c, d)
 
-    left.union(right) shouldBe Set(a, b, c).add(d)
-    right.union(left) shouldBe Set(a, b, c).add(d)
+      left union right shouldBe union
+      right union left shouldBe union
+    }
   }
 
   test("union with variance") {
@@ -232,18 +247,21 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("difference on two sets with different types should yield a Set with the common type") {
-    val (employee, consultant) = bothRoles
+    forAll { (employee: Employee, consultant: Consultant) =>
+      val employeeSet = Set(employee)
+      val consultantSet = Set(consultant)
 
-    val employeeSet = Set(employee)
-    val consultantSet = Set(consultant)
-
-    employeeSet.difference(consultantSet) shouldBe employeeSet
-    consultantSet.difference(employeeSet) shouldBe consultantSet
+      employeeSet.difference(consultantSet) shouldBe employeeSet
+      consultantSet.difference(employeeSet) shouldBe consultantSet
+    }
   }
 
   test("isSubsetOf on an empty Set should yield true") {
     Set.empty.isSubsetOf(Set.nothing) shouldBe true
-    Set.empty.isSubsetOf(Set(randomString)) shouldBe true
+
+    forAll { set: Set[String] =>
+      Set.empty.isSubsetOf(set) shouldBe true
+    }
   }
 
   test("isSubsetOf on itself should yield true") {
@@ -293,10 +311,9 @@ class SetSuite extends FunSuite with Matchers {
       x.hashCode shouldBe x.hashCode
     }
 
-    reflexive(Set.empty)
-    reflexive(Set(1))
-    reflexive(Set(1, 2))
-    reflexive(Set(2, 1))
+    forAll { set: Set[Int] =>
+      reflexive(set)
+    }
   }
 
   test("equals should be symmetric") {
@@ -308,16 +325,9 @@ class SetSuite extends FunSuite with Matchers {
       y.hashCode shouldBe x.hashCode
     }
 
-    symmetric(Set.empty, Set.empty)
-    symmetric(Set(1), Set(1))
-    symmetric(Set(1, 2), Set(1, 2))
-    symmetric(Set(1, 2), Set(2, 1))
-    symmetric(Set(1, 2, 3), Set(1, 2, 3))
-    symmetric(Set(1, 2, 3), Set(1, 3, 2))
-    symmetric(Set(1, 2, 3), Set(2, 1, 3))
-    symmetric(Set(1, 2, 3), Set(2, 3, 1))
-    symmetric(Set(1, 2, 3), Set(3, 1, 2))
-    symmetric(Set(1, 2, 3), Set(3, 2, 1))
+    forAll { set: Set[Int] =>
+      symmetric(set, set)
+    }
   }
 
   test("equals should be transitive") {
@@ -331,39 +341,44 @@ class SetSuite extends FunSuite with Matchers {
       x.hashCode shouldBe z.hashCode
     }
 
-    transitive(Set.empty, Set.empty, Set.empty)
-    transitive(Set(1, 2, 3), Set(3, 2, 1), Set(2, 1, 3))
+    forAll { set: Set[Int] =>
+      transitive(set, set, set)
+    }
   }
 
   test("these should not be equal") {
-    Set(1) should not be Set(2)
-    Set(2) should not be Set(1)
+    forAll { distinct: Distinct.Two[Int] =>
+      import distinct._
 
-    Set(1) should not be 1
-    1 should not be Set(1)
+      Set(first) should not be Set(second)
+      Set(second) should not be Set(first)
 
-    Set(1) == 1 shouldBe false
-    // 1 == Set(1) shouldBe false
+      Set(first) should not be first
+      first should not be Set(first)
 
-    Set(1) should not be Set("1")
-    Set("1") should not be Set(1)
+      Set(first) == first shouldBe false
+      // first == Set(first) shouldBe false
 
-    Set(1) == Set("1") shouldBe false
-    Set("1") == Set(1) shouldBe false
+      Set(first) should not be Set(first.toString)
+      Set(first.toString) should not be Set(first)
 
-    Set(1) should not be Set(1, 2)
-    Set(1, 2) should not be Set(1)
+      Set(first) == Set(first.toString) shouldBe false
+      Set(first.toString) == Set(first) shouldBe false
 
-    Set(1) should not be Set(2, 1)
-    Set(2, 1) should not be Set(1)
+      Set(first) should not be Set(first, second)
+      Set(first, second) should not be Set(first)
+
+      Set(first) should not be Set(second, first)
+      Set(second, first) should not be Set(first)
+    }
   }
 
   test("hashCode on an empty Set should not be random") {
     Set.empty.hashCode shouldBe Set.empty.hashCode
 
-    val element = randomString
-
-    Set(element).hashCode shouldBe Set(element).hashCode
+    forAll { element: String =>
+      Set(element).hashCode shouldBe Set(element).hashCode
+    }
   }
 
   test("hashCode on an empty Set should not be 0") {
@@ -584,29 +599,29 @@ class SetSuite extends FunSuite with Matchers {
   }
 
   test("flatten") {
-    Predef.Set[Predef.Set[Int]](
-      Predef.Set[Int](1, 2, 3),
-      Predef.Set(4, 5, 6),
-      Predef.Set(7, 8, 9)
-    ).flatten shouldBe Predef.Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    forAll { distinct: Distinct.Four[Int] =>
+      val Distinct.Four(a, b, c, d) = distinct
 
-    Set[Set[Int]](
-      Set[Int](1, 2, 3),
-      Set(4, 5, 6),
-      Set(7, 8, 9)
-    ).flatten shouldBe Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+      Set(
+        Set(a, b),
+        Set(c, d)
+      ).flatten shouldBe Set(a, b, c, d)
 
-    Set(
-      List(1, 2, 3),
-      List(4, 5, 6),
-      List(7, 8, 9)
-    ).flatten shouldBe Set(1, 2, 3, 4, 5, 6, 7, 8, 9)
+      Set(
+        List(a, b),
+        List(c, d)
+      ).flatten shouldBe Set(a, b, c, d)
 
-    List(
-      Set(1, 2, 3),
-      Set(4, 5, 6),
-      Set(7, 8, 9)
-    ).flatten shouldBe List(1, 2, 3, 4, 5, 6, 7, 8, 9)
+      List(
+        Set(a, b),
+        Set(c, d)
+      ).flatten shouldBe List(a, b, c, d)
+
+      List(
+        List(a, b),
+        List(c, d)
+      ).flatten shouldBe List(a, b, c, d)
+    }
   }
 
   test("Set should be a Function") {

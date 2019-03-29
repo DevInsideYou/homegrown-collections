@@ -22,7 +22,8 @@ scalacOptions ++=
 
 libraryDependencies ++=
   Seq(
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test", // http://www.scalatest.org
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
     "org.scala-lang.plugins" %% "scala-continuations-library" % "1.0.3",
     "com.github.mpilquist" %% "simulacrum" % "0.15.0"
   )

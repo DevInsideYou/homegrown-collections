@@ -2,9 +2,7 @@ package user
 
 import homegrown.collections._
 
-import org.scalatest._
-
-class TreeSuite extends FunSuite with Matchers {
+class TreeSuite extends TestSuite {
   test("toString") {
     Tree.empty.toString shouldBe "Tree.Empty"
     Tree(1).toString shouldBe "Tree.NonEmpty(Tree.Empty,1,Tree.Empty)"

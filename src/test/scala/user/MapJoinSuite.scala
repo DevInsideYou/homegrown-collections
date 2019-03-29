@@ -2,9 +2,7 @@ package user
 
 import homegrown.collections._
 
-import org.scalatest._
-
-class MapJoinSuite extends FunSuite with Matchers {
+class MapJoinSuite extends TestSuite {
   import MapJoinSuite._
   import MapJoin._
 
