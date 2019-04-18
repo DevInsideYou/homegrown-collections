@@ -1,0 +1,78 @@
+package homegrown.collections
+
+sealed abstract class List[+Element] extends FoldableFactory[Element, List] {
+  import List._
+
+  final override protected def factory: Factory[List] =
+    List
+
+  @scala.annotation.tailrec
+  final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result = this match {
+    case Empty =>
+      seed
+
+    case NonEmpty(element, otherElements) =>
+      val currentResult = function(seed, element)
+      otherElements.foldLeft(currentResult)(function)
+  }
+
+  final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result =
+    this match {
+      case Empty =>
+        seed
+
+      case NonEmpty(element, otherElements) =>
+        lazy val otherResult = otherElements.foldRight(seed)(function)
+        function(element, otherResult)
+    }
+
+  final def :::[Super >: Element](that: List[Super]): List[Super] =
+    that.foldRight[List[Super]](this)(_ :: _)
+
+  final def add[Super >: Element](input: Super): List[Super] =
+    NonEmpty(input, this)
+
+  @inline final def prepend[Super >: Element](input: Super): List[Super] =
+    add(input)
+
+  @inline final def ::[Super >: Element](input: Super): List[Super] =
+    add(input)
+
+  @inline final def push[Super >: Element](input: Super): List[Super] =
+    add(input)
+
+  final lazy val (head, tail) = popElement
+  @inline final lazy val peek = head
+  @inline final lazy val pop = tail
+
+  final def popElement: (Option[Element], List[Element]) =
+    this match {
+      case Empty =>
+        None -> empty
+
+      case NonEmpty(element, otherElements) =>
+        Some(element) -> otherElements
+    }
+
+  final def reversed: List[Element] =
+    foldLeft[List[Element]](empty)(_ add _)
+
+  final override def toString: String =
+    s"HGCList($toStringContent)"
+
+  private[this] def toStringContent: String = this match {
+    case Empty => ""
+    case NonEmpty(element, otherElements) =>
+      s"${element}${otherElements.splitByCommaSpace}"
+  }
+}
+
+object List extends Factory[List] {
+  final override def apply[Element](element: Element, otherElements: Element*): List[Element] =
+    element :: otherElements.foldRight[List[Element]](empty)(_ :: _)
+
+  final case class NonEmpty[+Element](element: Element, otherElements: List[Element]) extends List[Element]
+  final case object Empty extends List[Nothing]
+
+  final override def nothing: List[Nothing] = Empty
+}

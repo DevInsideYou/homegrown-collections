@@ -13,7 +13,7 @@ object MapJoin {
         inner(T2)
 
       def inner[TargetValue](factory: (ThisValue, ThatValue) => TargetValue): Map[Key, TargetValue] =
-        self.fold[Map[Key, TargetValue]](Map.empty) {
+        self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
               .map { thatValue =>
@@ -28,7 +28,7 @@ object MapJoin {
         leftOuter(T2)
 
       def leftOuter[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
-        self.fold[Map[Key, TargetValue]](Map.empty) {
+        self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
               .map { thatValue =>
@@ -43,7 +43,7 @@ object MapJoin {
         leftOnly(T2)
 
       def leftOnly[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
-        self.fold[Map[Key, TargetValue]](Map.empty) {
+        self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
               .map { thatValue =>
@@ -58,7 +58,7 @@ object MapJoin {
         rightOuter(T2)
 
       def rightOuter[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
-        that.fold[Map[Key, TargetValue]](Map.empty) {
+        that.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
               .map { thisValue =>
@@ -73,7 +73,7 @@ object MapJoin {
         rightOnly(T2)
 
       def rightOnly[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
-        that.fold[Map[Key, TargetValue]](Map.empty) {
+        that.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
               .map { thisValue =>
@@ -89,7 +89,7 @@ object MapJoin {
 
       def fullOuter[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
         val left =
-          self.fold[Map[Key, TargetValue]](Map.empty) {
+          self.foldLeft[Map[Key, TargetValue]](Map.empty) {
             case (acc, (thisKey, thisValue)) =>
               that(thisKey)
                 .map { thatValue =>
@@ -100,7 +100,7 @@ object MapJoin {
                 }
           }
 
-        that.fold[Map[Key, TargetValue]](left) {
+        that.foldLeft[Map[Key, TargetValue]](left) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
               .map { thisValue =>
@@ -117,7 +117,7 @@ object MapJoin {
 
       def outer[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
         val left =
-          self.fold[Map[Key, TargetValue]](Map.empty) {
+          self.foldLeft[Map[Key, TargetValue]](Map.empty) {
             case (acc, (thisKey, thisValue)) =>
               that(thisKey)
                 .map { thatValue =>
@@ -128,7 +128,7 @@ object MapJoin {
                 }
           }
 
-        that.fold[Map[Key, TargetValue]](left) {
+        that.foldLeft[Map[Key, TargetValue]](left) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
               .map { thisValue =>

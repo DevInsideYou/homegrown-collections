@@ -555,14 +555,14 @@ class MapSuite extends TestSuite {
   }
 
   test("toString on an empty Map should yield Map()") {
-    Map.empty.toString shouldBe "Map()"
+    Map.empty.toString shouldBe "HGCMap()"
   }
 
   test("toString on a Map with one element should yield Map(key -> value)") {
     val key = randomString
     val value = randomString
 
-    Map(key -> value).toString shouldBe s"Map($key -> $value)"
+    Map(key -> value).toString shouldBe s"HGCMap($key -> $value)"
   }
 
   test("toString on a Map with two elements should contain 2 parens, both elements, 2 arrows and one comma") {

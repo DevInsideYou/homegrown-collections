@@ -18,9 +18,14 @@ final class Map[Key, +Value] private (
   private[this] def unsafeValueOf(key: Key): Value =
     valueOf(key).get
 
-  final override def fold[Result](seed: Result)(function: (Result, (Key, Value)) => Result): Result =
-    keys.fold(seed) { (acc, currentKey) =>
+  final override def foldLeft[Result](seed: Result)(function: (Result, (Key, Value)) => Result): Result =
+    keys.foldLeft(seed) { (acc, currentKey) =>
       function(acc, currentKey -> unsafeValueOf(currentKey))
+    }
+
+  final override def foldRight[Result](seed: => Result)(function: ((Key, Value), => Result) => Result): Result =
+    keys.foldRight(seed) { (currentKey, acc) =>
+      function(currentKey -> unsafeValueOf(currentKey), acc)
     }
 
   final def add[SuperValue >: Value](input: (Key, SuperValue)): Map[Key, SuperValue] = {
@@ -59,23 +64,23 @@ final class Map[Key, +Value] private (
     }
 
   final override def hashCode: Int =
-    fold(41)(_ + _.hashCode)
+    foldLeft(41)(_ + _.hashCode)
 
-  final override def toString: String = keys.tree match {
+  final override def toString: String =
+    s"HGCMap($toStringContent)"
+
+  private[this] def toStringContent: String = keys.tree match {
     case Tree.Empty =>
-      "Map()"
+      ""
 
-    case Tree.NonEmpty(left, key, right) =>
-      "Map(" + unsafeRendered(key) + splitByCommaSpace(left) + splitByCommaSpace(right) + ")"
+    case Tree.NonEmpty(left, key, right) => // format: OFF
+      unsafeRendered(key) +
+       left.map(unsafeRendered).splitByCommaSpace +
+      right.map(unsafeRendered).splitByCommaSpace // format: ON
   }
 
   private[this] def unsafeRendered(key: Key): String =
     s"$key -> ${unsafeValueOf(key)}"
-
-  private[this] def splitByCommaSpace(input: Tree[Key]) =
-    input.fold("") { (acc, currentKey) =>
-      s"$acc, ${unsafeRendered(currentKey)}"
-    }
 
   final def isEmpty: Boolean =
     keys.isEmpty
@@ -150,7 +155,7 @@ object Map extends Factory2[Map] {
       andValues(valueOf.lift)
 
     final def andValues[Value](valueOf: Element => Option[Value]): Map[Element, Value] =
-      keys.fold[Map[Element, Value]](Map.empty) { (acc, currentKey) =>
+      keys.foldLeft[Map[Element, Value]](Map.empty) { (acc, currentKey) =>
         valueOf(currentKey)
           .map(value => acc.add(currentKey -> value))
           .getOrElse(acc)

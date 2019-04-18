@@ -20,16 +20,26 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
           right.contains(input)
     }
 
-  final override def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
+  final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
     this match {
       case Empty =>
         seed
 
       case NonEmpty(left, element, right) =>
         val currentResult = function(seed, element)
-        val rightResult = right.fold(currentResult)(function)
-        left.fold(rightResult)(function)
+        val rightResult = right.foldLeft(currentResult)(function)
+        left.foldLeft(rightResult)(function)
     }
+
+  final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result = this match {
+    case Empty =>
+      seed
+
+    case NonEmpty(left, element, right) =>
+      lazy val leftResult = left.foldRight(seed)(function)
+      lazy val rightResult = right.foldRight(leftResult)(function)
+      function(element, rightResult)
+  }
 
   final override def add[Super >: Element](input: Super): Tree[Super] =
     this match {
@@ -58,10 +68,10 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
     }
 
   final def union[Super >: Element](that: Tree[Super]): Tree[Super] =
-    fold(that)(_ add _)
+    foldLeft(that)(_ add _)
 
   final override def hashCode: Int =
-    fold(41)(_ + _.hashCode)
+    foldLeft(41)(_ + _.hashCode)
 
   final def isEmpty: Boolean =
     this.isInstanceOf[Empty.type]

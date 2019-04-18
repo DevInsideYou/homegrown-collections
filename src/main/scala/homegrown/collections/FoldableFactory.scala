@@ -10,44 +10,58 @@ trait FoldableFactory[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFa
     filter(!predicate(_))
 
   def filter(predicate: Element => Boolean): SubtypeOfFoldableFactory[Element] =
-    fold[SubtypeOfFoldableFactory[Element]](factory.empty) { (acc, current) =>
+    foldRight[SubtypeOfFoldableFactory[Element]](factory.empty) { (current, acc) =>
       if (predicate(current))
         acc.add(current)
       else
         acc
     }
 
+  def takeWhile(predicate: Element => Boolean): SubtypeOfFoldableFactory[Element] =
+    foldRight[SubtypeOfFoldableFactory[Element]](factory.empty) { (current, acc) =>
+      if (predicate(current))
+        acc.add(current)
+      else
+        factory.empty
+    }
+
   final def withFilter(predicate: Element => Boolean): FoldableFactory.Wrapper[Element, SubtypeOfFoldableFactory] =
     new FoldableFactory.Wrapper(this, predicate)
 
   def map[Result](function: Element => Result): SubtypeOfFoldableFactory[Result] =
-    fold[SubtypeOfFoldableFactory[Result]](factory.empty)(_ add function(_))
+    foldRight[SubtypeOfFoldableFactory[Result]](factory.empty) { (current, acc) =>
+      acc.add(function(current))
+    }
 
   def flatMap[Result](function: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
-    fold[SubtypeOfFoldableFactory[Result]](factory.empty) { (acc, current) =>
-      function(current).fold(acc)(_ add _)
+    foldRight[SubtypeOfFoldableFactory[Result]](factory.empty) { (current, acc) =>
+      function(current).foldRight(acc) { (current, acc) =>
+        acc.add(current)
+      }
     }
 
   def flatten[Result](implicit view: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
-    fold[SubtypeOfFoldableFactory[Result]](factory.empty) { (acc, current) =>
-      view(current).fold(acc)(_ add _)
+    foldRight[SubtypeOfFoldableFactory[Result]](factory.empty) { (current, acc) =>
+      view(current).foldRight(acc) { (current, acc) =>
+        acc.add(current)
+      }
     }
 }
 
 object FoldableFactory {
   final class Wrapper[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]](
-      foldableFactory: FoldableFactory[Element, SubtypeOfFoldableFactory],
+      foldLeftableFactory: FoldableFactory[Element, SubtypeOfFoldableFactory],
       predicate: Element => Boolean
   ) {
     final def foreach[Result](function: Element => Result): Unit = {
-      foldableFactory.fold(()) { (_, current) =>
+      foldLeftableFactory.foldLeft(()) { (_, current) =>
         if (predicate(current))
           function(current)
       }
     }
 
     final def map[Result](function: Element => Result): SubtypeOfFoldableFactory[Result] =
-      foldableFactory.fold[SubtypeOfFoldableFactory[Result]](foldableFactory.factory.empty) { (acc, current) =>
+      foldLeftableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldLeftableFactory.factory.empty) { (current, acc) =>
         if (predicate(current))
           acc.add(function(current))
         else
@@ -55,9 +69,11 @@ object FoldableFactory {
       }
 
     final def flatMap[Result](function: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
-      foldableFactory.fold[SubtypeOfFoldableFactory[Result]](foldableFactory.factory.empty) { (acc, current) =>
+      foldLeftableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldLeftableFactory.factory.empty) { (current, acc) =>
         if (predicate(current))
-          function(current).fold(acc)(_ add _)
+          function(current).foldRight(acc) { (current, acc) =>
+            acc.add(current)
+          }
         else
           acc
       }

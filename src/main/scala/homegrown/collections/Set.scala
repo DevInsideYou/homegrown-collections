@@ -14,8 +14,11 @@ final class Set[+Element] private (
   final override def contains[Super >: Element](input: Super): Boolean =
     tree.contains(input)
 
-  final override def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
-    tree.fold(seed)(function)
+  final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
+    tree.foldLeft(seed)(function)
+
+  final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result =
+    tree.foldRight(seed)(function)
 
   final override def add[Super >: Element](input: Super): Set[Super] =
     if (contains(input))
@@ -33,7 +36,7 @@ final class Set[+Element] private (
     filter(predicate)
 
   final def difference(predicate: Element => Boolean): Set[Element] =
-    fold[Set[Element]](empty) { (acc, current) =>
+    foldLeft[Set[Element]](empty) { (acc, current) =>
       if (predicate(current))
         acc
       else
@@ -53,20 +56,18 @@ final class Set[+Element] private (
     }
 
   final override def hashCode: Int =
-    fold(41)(_ + _.hashCode)
+    foldLeft(41)(_ + _.hashCode)
 
-  final override def toString: String = tree match {
+  final override def toString: String =
+    s"HGCSet($toStringContent)"
+
+  private[this] def toStringContent: String = tree match {
     case Tree.Empty =>
-      "{}"
+      ""
 
     case Tree.NonEmpty(left, element, right) =>
-      "{ " + element + splitByCommaSpace(left) + splitByCommaSpace(right) + " }"
+      s"${element}${left.splitByCommaSpace}${right.splitByCommaSpace}"
   }
-
-  private[this] def splitByCommaSpace(input: Tree[Element]) =
-    input.fold("") { (acc, current) =>
-      s"$acc, $current"
-    }
 
   final def isEmpty: Boolean =
     tree.isEmpty

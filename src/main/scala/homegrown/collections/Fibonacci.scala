@@ -69,7 +69,7 @@ object Fibonacci extends App {
         )
     }
 
-    loop(n, Stack.empty.push[Long](1).push(0))
+    loop(n, Stack.empty.push(1L).push(0))
   }
 
   final def cps[Input, ContinuationResult](input: Input)(continuation: Input => ContinuationResult): ContinuationResult =

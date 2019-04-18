@@ -105,7 +105,7 @@ class SetSuite extends TestSuite {
   }
 
   test("remove should remove elements from both sides of the tree") {
-    def run(ordered: List[Int]): Any = {
+    def run(ordered: scala.List[Int]): Any = {
       import ordered._
 
       val allExceptLast = ordered.dropRight(1)
@@ -113,7 +113,7 @@ class SetSuite extends TestSuite {
       Set(head, tail: _*).remove(last) shouldBe Set(head, allExceptLast: _*)
     }
 
-    forAll { numbers: List[Int] =>
+    forAll { numbers: scala.List[Int] =>
       val orderedAsc = numbers.distinct.sorted
       val orderedDsc = orderedAsc.reverse
 
@@ -611,16 +611,6 @@ class SetSuite extends TestSuite {
         List(a, b),
         List(c, d)
       ).flatten shouldBe Set(a, b, c, d)
-
-      List(
-        Set(a, b),
-        Set(c, d)
-      ).flatten shouldBe List(a, b, c, d)
-
-      List(
-        List(a, b),
-        List(c, d)
-      ).flatten shouldBe List(a, b, c, d)
     }
   }
 
@@ -696,14 +686,14 @@ class SetSuite extends TestSuite {
     Set(element).notForall(_.size != element.size) shouldBe true
   }
 
-  test("toString on an empty Set should yield {}") {
-    Set.empty.toString shouldBe "{}"
+  test("toString on an empty Set should yield HGCSet()") {
+    Set.empty.toString shouldBe "HGCSet()"
   }
 
-  test("toString on a Set with one element should yield { element }") {
+  test("toString on a Set with one element should yield HGCSet(element)") {
     val element = randomString
 
-    Set(element).toString shouldBe s"{ $element }"
+    Set(element).toString shouldBe s"HGCSet($element)"
   }
 
   test("toString on a Set with two elements should contain 2 braces, both elements and one comma") {
@@ -716,7 +706,7 @@ class SetSuite extends TestSuite {
 
     val actual = set.toString
 
-    actual.count(_ == '{') shouldBe 1
+    actual.count(_ == '(') shouldBe 1
 
     actual should include(first)
 
@@ -724,7 +714,7 @@ class SetSuite extends TestSuite {
 
     actual should include(second)
 
-    actual.count(_ == '}') shouldBe 1
+    actual.count(_ == ')') shouldBe 1
   }
 
   test("toString on a Set with three elements should contain 2 braces, three elements and two commas") {
@@ -739,7 +729,7 @@ class SetSuite extends TestSuite {
 
     val actual = set.toString
 
-    actual.count(_ == '{') shouldBe 1
+    actual.count(_ == '(') shouldBe 1
 
     actual should include(first)
 
@@ -749,7 +739,7 @@ class SetSuite extends TestSuite {
 
     actual should include(third)
 
-    actual.count(_ == '}') shouldBe 1
+    actual.count(_ == ')') shouldBe 1
   }
 
   test("toString should not produce any commas with leading spaces") {

@@ -1,10 +1,12 @@
 package homegrown.collections
 
 trait Foldable[+Element] {
-  def fold[Result](seed: Result)(function: (Result, Element) => Result): Result
+  def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result
+
+  def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result
 
   def size: Int =
-    fold(0) { (acc, _) =>
+    foldLeft(0) { (acc, _) =>
       acc + 1
     }
 
@@ -18,22 +20,22 @@ trait Foldable[+Element] {
     !exists(predicate)
 
   def exists(predicate: Element => Boolean): Boolean =
-    fold(false)(_ || predicate(_))
+    foldRight(false)(predicate(_) || _)
 
   final def notForall(predicate: Element => Boolean): Boolean =
     !forall(predicate)
 
   def forall(predicate: Element => Boolean): Boolean =
-    fold(true)(_ && predicate(_))
+    foldLeft(true)(_ && predicate(_))
 
   def foreach[Result](function: Element => Result): Unit = {
-    fold(()) { (_, current) =>
+    foldLeft(()) { (_, current) =>
       function(current)
     }
   }
 
   final def groupBy[Key](key: Element => Key): Map[Key, Set[Element]] =
-    fold[Map[Key, Set[Element]]](Map.empty) { (acc, current) =>
+    foldLeft[Map[Key, Set[Element]]](Map.empty) { (acc, current) =>
       val k: Key =
         key(current)
 
@@ -44,13 +46,31 @@ trait Foldable[+Element] {
 
       acc.add(k -> value)
     }
+
+  final def splitByCommaSpace: String =
+    foldLeft("") { (acc, current) =>
+      s"$acc, $current"
+    }
+
+  def find(predicate: Element => Boolean): Option[Element] =
+    foldRight[Option[Element]](None) { (current, acc) =>
+      if (predicate(current))
+        Some(current)
+      else
+        acc
+    }
 }
 
 object Foldable {
   implicit def viewFromTraversableToFoldableFromHGC[Element](from: Traversable[Element]): Foldable[Element] =
     new Foldable[Element] {
-      final override def fold[Result](seed: Result)(function: (Result, Element) => Result): Result =
+      final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
         from.foldLeft(seed)(function)
+
+      final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result =
+        from.foldRight(seed) { (current, acc) =>
+          function(current, acc)
+        }
     }
 
   implicit def viewFromFoldableToTraversableFromHGC[Element](from: Foldable[Element]): Traversable[Element] =
