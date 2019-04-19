@@ -36,18 +36,18 @@ trait FoldableFactory2[Key, +Value, SubtypeOfFoldableFactory[Key, +Value] <: Fol
 
 object FoldableFactory2 {
   final class Wrapper[Key, +Value, SubtypeOfFoldableFactory[Key, +Value] <: FoldableFactory2[Key, Value, SubtypeOfFoldableFactory]](
-      foldLeftableFactory: FoldableFactory2[Key, Value, SubtypeOfFoldableFactory],
+      foldableFactory: FoldableFactory2[Key, Value, SubtypeOfFoldableFactory],
       predicate: Tuple2[Key, Value] => Boolean
   ) {
     final def foreach[Result](function: Tuple2[Key, Value] => Result): Unit = {
-      foldLeftableFactory.foldLeft(()) { (_, current) =>
+      foldableFactory.foldLeft(()) { (_, current) =>
         if (predicate(current))
           function(current)
       }
     }
 
     final def map[ResultKey, ResultValue](function: Tuple2[Key, Value] => Tuple2[ResultKey, ResultValue]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
-      foldLeftableFactory.foldLeft[SubtypeOfFoldableFactory[ResultKey, ResultValue]](foldLeftableFactory.factory.empty) { (acc, current) =>
+      foldableFactory.foldLeft[SubtypeOfFoldableFactory[ResultKey, ResultValue]](foldableFactory.factory.empty) { (acc, current) =>
         if (predicate(current))
           acc.add(function(current))
         else
@@ -55,7 +55,7 @@ object FoldableFactory2 {
       }
 
     def flatMap[ResultKey, ResultValue](function: Tuple2[Key, Value] => Foldable[Tuple2[ResultKey, ResultValue]]): SubtypeOfFoldableFactory[ResultKey, ResultValue] =
-      foldLeftableFactory.foldLeft[SubtypeOfFoldableFactory[ResultKey, ResultValue]](foldLeftableFactory.factory.empty) { (acc, current) =>
+      foldableFactory.foldLeft[SubtypeOfFoldableFactory[ResultKey, ResultValue]](foldableFactory.factory.empty) { (acc, current) =>
         if (predicate(current))
           function(current).foldLeft(acc)(_ add _)
         else

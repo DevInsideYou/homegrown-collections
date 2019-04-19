@@ -50,18 +50,18 @@ trait FoldableFactory[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFa
 
 object FoldableFactory {
   final class Wrapper[+Element, SubtypeOfFoldableFactory[+Element] <: FoldableFactory[Element, SubtypeOfFoldableFactory]](
-      foldLeftableFactory: FoldableFactory[Element, SubtypeOfFoldableFactory],
+      foldableFactory: FoldableFactory[Element, SubtypeOfFoldableFactory],
       predicate: Element => Boolean
   ) {
     final def foreach[Result](function: Element => Result): Unit = {
-      foldLeftableFactory.foldLeft(()) { (_, current) =>
+      foldableFactory.foldLeft(()) { (_, current) =>
         if (predicate(current))
           function(current)
       }
     }
 
     final def map[Result](function: Element => Result): SubtypeOfFoldableFactory[Result] =
-      foldLeftableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldLeftableFactory.factory.empty) { (current, acc) =>
+      foldableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldableFactory.factory.empty) { (current, acc) =>
         if (predicate(current))
           acc.add(function(current))
         else
@@ -69,7 +69,7 @@ object FoldableFactory {
       }
 
     final def flatMap[Result](function: Element => Foldable[Result]): SubtypeOfFoldableFactory[Result] =
-      foldLeftableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldLeftableFactory.factory.empty) { (current, acc) =>
+      foldableFactory.foldRight[SubtypeOfFoldableFactory[Result]](foldableFactory.factory.empty) { (current, acc) =>
         if (predicate(current))
           function(current).foldRight(acc) { (current, acc) =>
             acc.add(current)
