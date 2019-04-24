@@ -1,6 +1,7 @@
 package user
 
 import homegrown.collections._
+import homegrown.mathlibrary._
 
 class ListSuite extends TestSuite {
   test("Calling the varargs apply method on the List companion object should yield a List with all the arguments as elements which are appropriately ordered") {
@@ -114,5 +115,34 @@ class ListSuite extends TestSuite {
         List(c, d)
       ).flatten shouldBe List(a, b, c, d)
     }
+  }
+
+  test("Group Theory") {
+    val listOfIntConcatenation: Semigroup[List[Int]] =
+      Semigroup[List[Int]]
+
+    val listOfStringConcatenation: Semigroup[List[String]] =
+      List.Concatenation[String]
+  }
+
+  test("fold should be able to express aggregation") {
+    forAll { (a: Int, b: Int, c: Int) =>
+      List(a, b, c).foldLeft(seed = 0)(_ + _) shouldBe (a + b + c)
+      List(a, b, c).foldRight(seed = 0)(_ + _) shouldBe (a + b + c)
+    }
+
+    forAll { (a: String, b: String, c: String) =>
+      List(a, b, c).foldLeft(seed = "")(_ + _) shouldBe (a + b + c)
+      List(a, b, c).foldRight(seed = "")(_ + _) shouldBe (a + b + c)
+    }
+
+    forAll { (a: List[Int], b: List[Int], c: List[Int]) =>
+      List(a, b, c).foldLeft(seed = List.empty[Int])(_ ::: _) shouldBe (a ::: b ::: c)
+      List(a, b, c).foldRight(seed = List.empty[Int])(_ ::: _) shouldBe (a ::: b ::: c)
+    }
+
+    List(2, 4).aggregated shouldBe 6
+    List(2, 4).aggregated(IntAddition) shouldBe 6
+    List(2, 4).aggregated(IntMultiplication) shouldBe 8
   }
 }

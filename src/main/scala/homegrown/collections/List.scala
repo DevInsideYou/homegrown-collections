@@ -1,4 +1,7 @@
-package homegrown.collections
+package homegrown
+package collections
+
+import mathlibrary._
 
 sealed abstract class List[+Element] extends FoldableFactory[Element, List] {
   import List._
@@ -75,4 +78,31 @@ object List extends Factory[List] {
   final case object Empty extends List[Nothing]
 
   final override def nothing: List[Nothing] = Empty
+
+  implicit def arbitrary[T: Arbitrary]: Arbitrary[List[T]] =
+    Arbitrary(gen[T])
+
+  def gen[T: Arbitrary]: Gen[List[T]] =
+    Gen.listOf(Arbitrary.arbitrary[T]).map {
+      case Nil          => List.empty[T]
+      case head :: tail => List(head, tail: _*)
+    }
+
+  def genNonEmpty[T: Arbitrary]: Gen[List[T]] =
+    Gen.nonEmptyListOf(Arbitrary.arbitrary[T]).map {
+      case Nil          => sys.error("should not happen")
+      case head :: tail => List(head, tail: _*)
+    }
+
+  implicit def Concatenation[A: Arbitrary]: Monoid[List[A]] =
+    new Monoid[List[A]] {
+      final override protected lazy val arbitrary: Arbitrary[List[A]] =
+        implicitly[Arbitrary[List[A]]]
+
+      final override lazy val operation: ClosedBinaryOperation[List[A]] =
+        _ ::: _
+
+      final override lazy val uniqueIdentityElement: List[A] =
+        empty[A]
+    }
 }

@@ -1,9 +1,15 @@
-package homegrown.collections
+package homegrown
+package collections
+
+import mathlibrary._
 
 trait Foldable[+Element] {
   def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result
 
   def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result
+
+  @inline def aggregated[Super >: Element: Monoid]: Super =
+    foldLeft(seed = Monoid[Super].uniqueIdentityElement)(Monoid[Super].operation)
 
   def size: Int =
     foldLeft(0) { (acc, _) =>
@@ -26,7 +32,7 @@ trait Foldable[+Element] {
     !forall(predicate)
 
   def forall(predicate: Element => Boolean): Boolean =
-    foldLeft(true)(_ && predicate(_))
+    foldRight(true)(predicate(_) && _)
 
   def foreach[Result](function: Element => Result): Unit = {
     foldLeft(()) { (_, current) =>

@@ -1,6 +1,7 @@
 package user
 
 import homegrown.collections._
+import homegrown.mathlibrary._
 
 class SetSuite extends TestSuite {
   import SetSuite._
@@ -829,6 +830,14 @@ class SetSuite extends TestSuite {
         case 3 => "III"
       }
       .shouldBe(expected)
+  }
+
+  test("Group Theory") {
+    val setOfIntUnion: Semigroup[Set[Int]] =
+      Semigroup[Set[Int]]
+
+    val setOfStringUnion: Semigroup[Set[String]] =
+      Set.Union[String]
   }
 }
 
