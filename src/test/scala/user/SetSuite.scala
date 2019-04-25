@@ -833,10 +833,10 @@ class SetSuite extends TestSuite {
   }
 
   test("Group Theory") {
-    val setOfIntUnion: Semigroup[Set[Int]] =
-      Semigroup[Set[Int]]
+    val setOfIntUnion: Monoid[Set[Int]] =
+      Monoid[Set[Int]]
 
-    val setOfStringUnion: Semigroup[Set[String]] =
+    val setOfStringUnion: Monoid[Set[String]] =
       Set.Union[String]
   }
 }

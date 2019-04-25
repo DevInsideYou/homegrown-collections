@@ -118,10 +118,10 @@ class ListSuite extends TestSuite {
   }
 
   test("Group Theory") {
-    val listOfIntConcatenation: Semigroup[List[Int]] =
-      Semigroup[List[Int]]
+    val listOfIntConcatenation: Monoid[List[Int]] =
+      Monoid[List[Int]]
 
-    val listOfStringConcatenation: Semigroup[List[String]] =
+    val listOfStringConcatenation: Monoid[List[String]] =
       List.Concatenation[String]
   }
 
