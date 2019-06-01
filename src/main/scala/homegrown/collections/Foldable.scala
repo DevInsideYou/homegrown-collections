@@ -84,5 +84,8 @@ object Foldable {
       final override def foreach[Result](function: Element => Result): Unit = {
         from.foreach(function)
       }
+
+      final override def iterator: Iterator[Element] =
+        ???
     }
 }
