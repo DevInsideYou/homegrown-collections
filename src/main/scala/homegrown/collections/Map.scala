@@ -18,12 +18,12 @@ final class Map[Key, +Value] private (
   private[this] def unsafeValueOf(key: Key): Value =
     valueOf(key).get
 
-  final override def foldLeft[Result](seed: Result)(function: (Result, (Key, Value)) => Result): Result =
+  final override def foldLeft[Result](seed: Result)(function: (Result, => (Key, Value)) => Result): Result =
     keys.foldLeft(seed) { (acc, currentKey) =>
       function(acc, currentKey -> unsafeValueOf(currentKey))
     }
 
-  final override def foldRight[Result](seed: => Result)(function: ((Key, Value), => Result) => Result): Result =
+  final override def foldRight[Result](seed: => Result)(function: (=> (Key, Value), => Result) => Result): Result =
     keys.foldRight(seed) { (currentKey, acc) =>
       function(currentKey -> unsafeValueOf(currentKey), acc)
     }

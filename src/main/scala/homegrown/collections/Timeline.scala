@@ -3,135 +3,77 @@ package collections
 
 import mathlibrary._
 
-sealed abstract class Timeline[+Event]
-  extends (Int => Option[Event]) {
-  import Timeline._
+import Timeline.Data
 
-  final override def apply(index: Int): Option[Event] = {
-    @scala.annotation.tailrec
-    def loop(
-        timeline: Timeline[Event],
-        count: Int
-    ): Option[Event] =
-      if (index < 0)
-        None
-      else if (count == index)
-        timeline.head
-      else
-        loop(timeline.tail, count + 1)
-
-    loop(this, 0)
-  }
+final class Timeline[+Event] private (
+    private val data: IO[Data[Event]]
+) extends Foldable[Event]
+  with (Int => Option[Event]) {
+  final override def apply(index: Int): Option[Event] =
+    data.unsafeRun().apply(index)
 
   final def head: Option[Event] =
-    this match {
-      case End =>
-        None
-
-      case NonEmpty(recentEvent, _) =>
-        Some(recentEvent.unsafeRun())
-    }
+    data.unsafeRun().head
 
   final def tail: Timeline[Event] =
-    this match {
-      case End =>
-        End
-
-      case NonEmpty(_, previousEvents) =>
-        previousEvents.unsafeRun()
-    }
+    Timeline(data.map(_.tail))
 
   final def isEmpty: Boolean =
-    this.isInstanceOf[End.type]
+    this == Timeline.End
 
   final def nonEmpty: Boolean =
     !isEmpty
 
-  @scala.annotation.tailrec
-  final def foldLeft[Result](seed: Result)(function: (Result, => Event) => Result): Result = this match {
-    case End =>
-      seed
-
-    case NonEmpty(recentEvent, previousEvents) =>
-      val currentResult = function(seed, recentEvent.unsafeRun())
-      previousEvents.unsafeRun().foldLeft(currentResult)(function)
-  }
-
-  final def foldRight[Result](seed: => Result)(function: (=> Event, => Result) => Result): Result =
-    this match {
-      case End =>
-        seed
-
-      case NonEmpty(recentEvent, previousEvents) =>
-        lazy val otherResult = previousEvents.unsafeRun().foldRight(seed)(function)
-        function(recentEvent.unsafeRun(), otherResult)
+  final def reduceLeft[Result >: Event](function: (Result, => Event) => Result): Option[Result] =
+    head.map { seed =>
+      tail.foldLeft[Result](seed)(function)
     }
 
-  def size: Int =
-    foldLeft(0) { (acc, _) =>
-      acc + 1
+  final def reduceLeftOrThrowException[Result >: Event](function: (Result, => Event) => Result): Result =
+    reduceLeft(function).get
+
+  final def reduceRight[Result >: Event](function: (=> Event, => Result) => Result): Option[Result] =
+    head.map { seed =>
+      tail.foldRight[Result](seed)(function)
     }
 
-  final def foreach[Result](function: Event => Result): Unit = {
-    foldLeft(()) { (_, current) =>
-      function(current)
-    }
-  }
+  final def reduceRightOrThrowException[Result >: Event](function: (=> Event, => Result) => Result): Result =
+    reduceRight(function).get
 
-  final def map[Result](function: Event => Result): Timeline[Result] =
-    foldRight[Timeline[Result]](End)(function(_) #:: _)
+  final override def foldLeft[Result](seed: Result)(function: (Result, => Event) => Result): Result =
+    data.unsafeRun().foldLeft(seed)(function)
 
-  final def flatMap[Result](function: (=> Event) => Timeline[Result]): Timeline[Result] =
-    foldRight[Timeline[Result]](End) { (current, acc) =>
-      function(current).foldRight(acc)(_ #:: _)
-    }
+  final override def foldRight[Result](seed: => Result)(function: (=> Event, => Result) => Result): Result =
+    data.unsafeRun().foldRight(seed)(function)
 
-  final def flatten[Result](implicit view: (=> Event) => Timeline[Result]): Timeline[Result] =
-    foldRight[Timeline[Result]](End) { (current, acc) =>
-      view(current).foldRight(acc)(_ #:: _)
-    }
-
-  final def take(amount: Int): Timeline[Event] = {
-    @scala.annotation.tailrec
-    def loop(
-        timeline: Timeline[Event],
-        acc: Timeline[Event],
-        count: Int
-    ): Timeline[Event] = timeline match {
-      case End =>
-        acc
-
-      case NonEmpty(recentEvent, previousEvents) =>
-        if (count >= amount)
-          acc
-        else
-          loop(
-            timeline = previousEvents.unsafeRun(),
-            acc      = recentEvent.unsafeRun() #:: acc,
-            count    = count + 1
-          )
-    }
-
-    loop(this, End, 0).reversed
-  }
+  final def take(amount: Int): Timeline[Event] =
+    Timeline(data.map(_.take(amount)))
 
   final def reversed: Timeline[Event] =
-    foldLeft[Timeline[Event]](End)(_ add _)
+    Timeline(data.map(_.reversed))
+
+  final def filter(predicate: Event => Boolean): Timeline[Event] =
+    Timeline(data.map(_.filter(predicate)))
+
+  final def withFilter(predicate: Event => Boolean): Timeline[Event] =
+    filter(predicate)
+
+  final def takeWhile(predicate: Event => Boolean): Timeline[Event] =
+    Timeline(data.map(_.takeWhile(predicate)))
+
+  final def map[Result](function: Event => Result): Timeline[Result] =
+    Timeline(data.map(_.map(function)))
+
+  final def flatMap[Result](function: (=> Event) => Foldable[Result]): Timeline[Result] =
+    Timeline(data.map(_.flatMap(function)))
+
+  final def flatten[Result](implicit view: (=> Event) => Foldable[Result]): Timeline[Result] =
+    Timeline(data.map(_.flatten))
 
   final override def equals(other: Any): Boolean =
     other match {
       case that: Timeline[Event] =>
-        if (this.isEmpty && that.isEmpty)
-          true
-        else if (this.isEmpty || that.isEmpty)
-          false
-        else {
-          val NonEmpty(n1Head, n1Tail) = this
-          val NonEmpty(n2Head, n2Tail) = that
-
-          n1Head.unsafeRun() == n2Head.unsafeRun() && // format: OFF
-          n1Tail.unsafeRun() == n2Tail.unsafeRun() // format: ON
-        }
+        this.data.unsafeRun() == that.data.unsafeRun()
 
       case _ =>
         false
@@ -142,42 +84,21 @@ sealed abstract class Timeline[+Event]
 
   private[this] def toStringContent: String =
     this match {
-      case End =>
+      case Timeline.End =>
         ""
 
-      case NonEmpty(recentEvent, previousEvents) =>
+      case Timeline.NonEmpty(recentEvent, previousEvents) =>
         s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
     }
 
   final def zip[ThatEvent](that: Timeline[ThatEvent]): Timeline[(Event, ThatEvent)] =
-    this match {
-      case End =>
-        End
-
-      case NonEmpty(recentEvent, previousEvents) =>
-        that match {
-          case End =>
-            End
-
-          case NonEmpty(thatRecentEvent, thatPreviousEvents) =>
-            previousEvents
-              .unsafeRun()
-              .zip(thatPreviousEvents.unsafeRun())
-              .after(recentEvent.unsafeRun() -> thatRecentEvent.unsafeRun())
-        }
-    }
+    Timeline(data.map(_.zip(that.data.unsafeRun())))
 
   final def interleave[Super >: Event](that: Timeline[Super]): Timeline[Super] =
-    this match {
-      case End =>
-        that
-
-      case NonEmpty(recentEvent, previousEvents) =>
-        recentEvent.unsafeRun() #:: that.interleave(previousEvents.unsafeRun())
-    }
+    Timeline(data.map(_.interleave(that.data.unsafeRun())))
 
   final def forced: List[Event] =
-    foldRight[List[Event]](List.empty)(_ :: _)
+    data.unsafeRun().forced
 
   @inline final def drained: List[Event] =
     forced
@@ -190,23 +111,46 @@ object Timeline {
   /** Required for flatten*/
   implicit def force[A](a: => A): A = a
 
-  final case class NonEmpty[+Event] private (
-      recentEvent: IO[Event],
-      previousEvents: IO[Timeline[Event]]
-  ) extends Timeline[Event]
+  final private def apply[Event](data: IO[Data[Event]]): Timeline[Event] =
+    new Timeline(data.memoized)
 
   object NonEmpty {
     def apply[Event](
         recentEvent: IO[Event],
         previousEvents: IO[Timeline[Event]]
     ): Timeline[Event] =
-      new NonEmpty(
-        recentEvent    = recentEvent.memoized,
-        previousEvents = previousEvents.memoized
+      Timeline(
+        previousEvents.map { timeline =>
+          Data.NonEmpty(
+            recentEvent    = recentEvent,
+            previousEvents = timeline.data
+          )
+        }
       )
+
+    def unapply[Event](timeline: Timeline[Event]): Option[(IO[Event], IO[Timeline[Event]])] =
+      timeline.data.unsafeRun() match {
+        case Data.End =>
+          None
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          Some(recentEvent -> IO.pure(Timeline(previousEvents)))
+      }
   }
 
-  case object End extends Timeline[Nothing]
+  def unapplySeq[Event](timeline: Timeline[Event]): Option[scala.Seq[Event]] =
+    if (timeline == null)
+      None
+    else
+      Some(
+        timeline.foldRight[scala.LazyList[Event]](scala.LazyList.empty)(_ #:: _)
+      )
+
+  final val End: Timeline[Nothing] =
+    Timeline(IO.pure(Data.End))
+
+  final def end[Event]: Timeline[Event] =
+    End
 
   implicit final class TimelineOpsFromHGC[Event](timeline: => Timeline[Event]) {
     final def add[Super >: Event](input: => Super): Timeline[Super] =
@@ -238,25 +182,25 @@ object Timeline {
   }
 
   final def apply[Event](recentEvent: => Event, followingEvents: IO[Event]*): Timeline[Event] =
-    recentEvent #:: followingEvents.foldRight[Timeline[Event]](End)(_.unsafeRun() #:: _)
+    Timeline(IO.pure(Data(recentEvent, followingEvents: _*)))
 
   final def apply[Event](
       first: => Event
   ): Timeline[Event] =
-    first #:: Timeline.End
+    Timeline(IO.pure(Data(first)))
 
   final def apply[Event](
       first: => Event,
       second: => Event
   ): Timeline[Event] =
-    first #:: apply(second)
+    Timeline(IO.pure(Data(first, second)))
 
   final def apply[Event](
       first: => Event,
       second: => Event,
       third: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third)
+    Timeline(IO.pure(Data(first, second, third)))
 
   final def apply[Event](
       first: => Event,
@@ -264,7 +208,7 @@ object Timeline {
       third: => Event,
       fourth: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth)
+    Timeline(IO.pure(Data(first, second, third, fourth)))
 
   final def apply[Event](
       first: => Event,
@@ -273,7 +217,7 @@ object Timeline {
       fourth: => Event,
       fifth: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth)))
 
   final def apply[Event](
       first: => Event,
@@ -283,7 +227,7 @@ object Timeline {
       fifth: => Event,
       sixth: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth, sixth)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth)))
 
   final def apply[Event](
       first: => Event,
@@ -294,7 +238,7 @@ object Timeline {
       sixth: => Event,
       seventh: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth, sixth, seventh)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh)))
 
   final def apply[Event](
       first: => Event,
@@ -306,7 +250,7 @@ object Timeline {
       seventh: => Event,
       eighth: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh, eighth)))
 
   final def apply[Event](
       first: => Event,
@@ -319,7 +263,7 @@ object Timeline {
       eighth: => Event,
       ninth: => Event
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth, ninth)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh, eighth, ninth)))
 
   final def apply[Event](
       first: => Event,
@@ -334,7 +278,7 @@ object Timeline {
       tenth: => Event,
       followingEvents: IO[Event]*
   ): Timeline[Event] =
-    first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth) #::: followingEvents.foldRight[Timeline[Event]](Timeline.End)(_.unsafeRun() #:: _)
+    Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, followingEvents: _*)))
 
   implicit def arbitrary[T](implicit arbitrary: Arbitrary[IO[T]]): Arbitrary[Timeline[T]] =
     Arbitrary(gen[T])
@@ -356,4 +300,363 @@ object Timeline {
         else
           Timeline(lazyList.head.unsafeRun(), lazyList.tail: _*)
       }
+
+  implicit def Concatenation[A](implicit arb: Arbitrary[IO[A]]): Monoid[Timeline[A]] =
+    new Monoid[Timeline[A]] {
+      final override protected lazy val arbitrary: Arbitrary[Timeline[A]] =
+        implicitly[Arbitrary[Timeline[A]]]
+
+      final override lazy val operation: ClosedBinaryOperation[Timeline[A]] =
+        _ #::: _
+
+      final override lazy val uniqueIdentityElement: Timeline[A] =
+        end[A]
+    }
+
+  private sealed abstract class Data[+Event]
+    extends Foldable[Event]
+    with (Int => Option[Event]) {
+    final override def apply(index: Int): Option[Event] = {
+      @scala.annotation.tailrec
+      def loop(
+          data: Data[Event],
+          count: Int
+      ): Option[Event] =
+        if (index < 0)
+          None
+        else if (count == index)
+          data.head
+        else
+          loop(data.tail, count + 1)
+
+      loop(this, 0)
+    }
+
+    final def head: Option[Event] =
+      this match {
+        case Data.End =>
+          None
+
+        case Data.NonEmpty(recentEvent, _) =>
+          Some(recentEvent.unsafeRun())
+      }
+
+    final def tail: Data[Event] =
+      this match {
+        case Data.End =>
+          Data.End
+
+        case Data.NonEmpty(_, previousEvents) =>
+          previousEvents.unsafeRun()
+      }
+
+    final def isEmpty: Boolean =
+      this.isInstanceOf[Data.End.type]
+
+    final def nonEmpty: Boolean =
+      !isEmpty
+
+    @scala.annotation.tailrec
+    final override def foldLeft[Result](seed: Result)(function: (Result, => Event) => Result): Result =
+      this match {
+        case Data.End =>
+          seed
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          val currentResult = function(seed, recentEvent.unsafeRun())
+          previousEvents.unsafeRun().foldLeft(currentResult)(function)
+      }
+
+    final override def foldRight[Result](seed: => Result)(function: (=> Event, => Result) => Result): Result =
+      this match {
+        case Data.End =>
+          seed
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          lazy val otherResult = previousEvents.unsafeRun().foldRight(seed)(function)
+          function(recentEvent.unsafeRun(), otherResult)
+      }
+
+    final def take(amount: Int): Data[Event] = {
+      @scala.annotation.tailrec
+      def loop(
+          data: Data[Event],
+          acc: Data[Event],
+          count: Int
+      ): Data[Event] = data match {
+        case Data.End =>
+          acc
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          lazy val nextCount =
+            count + 1
+
+          lazy val nextAcc =
+            recentEvent.unsafeRun() #:: acc
+
+          if (count >= amount)
+            acc
+          else if (nextCount == amount)
+            nextAcc
+          else
+            loop(
+              data  = previousEvents.unsafeRun(),
+              acc   = nextAcc,
+              count = nextCount
+            )
+      }
+
+      loop(this, Data.End, 0).reversed
+    }
+
+    final def reversed: Data[Event] =
+      foldLeft[Data[Event]](Data.End)(_ add _)
+
+    final def filter(predicate: Event => Boolean): Data[Event] =
+      foldRight[Data[Event]](Data.End) { (current, acc) =>
+        if (predicate(current))
+          current #:: acc
+        else
+          acc
+      }
+
+    final def withFilter(predicate: Event => Boolean): Data[Event] =
+      filter(predicate)
+
+    final def takeWhile(predicate: Event => Boolean): Data[Event] =
+      foldRight[Data[Event]](Data.End) { (current, acc) =>
+        if (predicate(current))
+          current #:: acc
+        else
+          Data.End
+      }
+
+    final def map[Result](function: Event => Result): Data[Result] =
+      foldRight[Data[Result]](Data.End)(function(_) #:: _)
+
+    final def flatMap[Result](function: (=> Event) => Foldable[Result]): Data[Result] =
+      foldRight[Data[Result]](Data.End) { (current, acc) =>
+        function(current).foldRight(acc)(_ #:: _)
+      }
+
+    final def flatten[Result](implicit view: (=> Event) => Foldable[Result]): Data[Result] =
+      foldRight[Data[Result]](Data.End) { (current, acc) =>
+        view(current).foldRight(acc)(_ #:: _)
+      }
+
+    final override def equals(other: Any): Boolean =
+      other match {
+        case that: Data[Event] =>
+          if (this.isEmpty && that.isEmpty)
+            true
+          else if (this.isEmpty || that.isEmpty)
+            false
+          else {
+            val Data.NonEmpty(n1Head, n1Tail) = this
+            val Data.NonEmpty(n2Head, n2Tail) = that
+
+            n1Head.unsafeRun() == n2Head.unsafeRun() && // format: OFF
+            n1Tail.unsafeRun() == n2Tail.unsafeRun() // format: ON
+          }
+
+        case _ =>
+          false
+      }
+
+    final override def toString: String =
+      s"Data($toStringContent)"
+
+    private[this] def toStringContent: String =
+      this match {
+        case Data.End =>
+          ""
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
+      }
+
+    final def zip[ThatEvent](that: Data[ThatEvent]): Data[(Event, ThatEvent)] =
+      this match {
+        case Data.End =>
+          Data.End
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          that match {
+            case Data.End =>
+              Data.End
+
+            case Data.NonEmpty(thatRecentEvent, thatPreviousEvents) =>
+              previousEvents
+                .unsafeRun()
+                .zip(thatPreviousEvents.unsafeRun())
+                .after(recentEvent.unsafeRun() -> thatRecentEvent.unsafeRun())
+          }
+      }
+
+    final def interleave[Super >: Event](that: Data[Super]): Data[Super] =
+      this match {
+        case Data.End =>
+          that
+
+        case Data.NonEmpty(recentEvent, previousEvents) =>
+          recentEvent.unsafeRun() #:: that.interleave(previousEvents.unsafeRun())
+      }
+
+    final def forced: List[Event] =
+      foldRight[List[Event]](List.empty)(_ :: _)
+
+    @inline final def drained: List[Event] =
+      forced
+
+    @inline final def toList: List[Event] =
+      forced
+  }
+
+  private object Data {
+    final case class NonEmpty[+Event] private (
+        recentEvent: IO[Event],
+        previousEvents: IO[Data[Event]]
+    ) extends Data[Event]
+
+    object NonEmpty {
+      def apply[Event](
+          recentEvent: IO[Event],
+          previousEvents: IO[Data[Event]]
+      ): Data[Event] =
+        new NonEmpty(
+          recentEvent    = recentEvent.memoized,
+          previousEvents = previousEvents.memoized
+        )
+    }
+
+    case object End extends Data[Nothing]
+
+    implicit final class DataOpsFromHGC[Event](data: => Data[Event]) {
+      final def add[Super >: Event](input: => Super): Data[Super] =
+        NonEmpty(
+          recentEvent    = IO.pure(input),
+          previousEvents = IO.pure(data)
+        )
+
+      @inline final def prepend[Super >: Event](input: => Super): Data[Super] =
+        add(input)
+
+      @inline final def after[Super >: Event](input: => Super): Data[Super] =
+        add(input)
+
+      @inline final def #::[Super >: Event](input: => Super): Data[Super] =
+        add(input)
+
+      final def addMany[Super >: Event](that: Data[Super]): Data[Super] =
+        that.foldRight[Data[Super]](data)(_ #:: _)
+
+      @inline final def prependMany[Super >: Event](that: Data[Super]): Data[Super] =
+        addMany(that)
+
+      @inline final def afterMany[Super >: Event](that: Data[Super]): Data[Super] =
+        addMany(that)
+
+      @inline final def #:::[Super >: Event](that: Data[Super]): Data[Super] =
+        addMany(that)
+    }
+
+    final def apply[Event](recentEvent: => Event, followingEvents: IO[Event]*): Data[Event] =
+      recentEvent #:: followingEvents.foldRight[Data[Event]](Data.End)(_.unsafeRun() #:: _)
+
+    final def apply[Event](
+        first: => Event
+    ): Data[Event] =
+      first #:: Data.End
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event
+    ): Data[Event] =
+      first #:: apply(second)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event
+    ): Data[Event] =
+      first #:: apply(second, third)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event,
+        sixth: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth, sixth)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event,
+        sixth: => Event,
+        seventh: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth, sixth, seventh)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event,
+        sixth: => Event,
+        seventh: => Event,
+        eighth: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event,
+        sixth: => Event,
+        seventh: => Event,
+        eighth: => Event,
+        ninth: => Event
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth, ninth)
+
+    final def apply[Event](
+        first: => Event,
+        second: => Event,
+        third: => Event,
+        fourth: => Event,
+        fifth: => Event,
+        sixth: => Event,
+        seventh: => Event,
+        eighth: => Event,
+        ninth: => Event,
+        tenth: => Event,
+        followingEvents: IO[Event]*
+    ): Data[Event] =
+      first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth) #::: followingEvents.foldRight[Data[Event]](Data.End)(_.unsafeRun() #:: _)
+  }
 }

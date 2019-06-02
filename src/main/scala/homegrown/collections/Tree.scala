@@ -20,7 +20,7 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
           right.contains(input)
     }
 
-  final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
+  final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result =
     this match {
       case Empty =>
         seed
@@ -31,7 +31,7 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
         left.foldLeft(rightResult)(function)
     }
 
-  final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result = this match {
+  final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result = this match {
     case Empty =>
       seed
 

@@ -17,10 +17,10 @@ final class Set[+Element] private (
   final override def contains[Super >: Element](input: Super): Boolean =
     tree.contains(input)
 
-  final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
+  final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result =
     tree.foldLeft(seed)(function)
 
-  final override def foldRight[Result](seed: => Result)(function: (Element, => Result) => Result): Result =
+  final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result =
     tree.foldRight(seed)(function)
 
   final override def add[Super >: Element](input: Super): Set[Super] =

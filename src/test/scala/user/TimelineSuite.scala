@@ -521,6 +521,212 @@ sealed abstract class TimelineSuite extends TestSuite {
     }
   }
 
+  test("filter") {
+    new Environment {
+      def ascending(seed: Int): Timeline[Int] =
+        sideEffect(seed) #:: ascending(seed + 1)
+
+      val ints: Timeline[Int] =
+        ascending(seed = 0)
+
+      val filtered: Timeline[Int] =
+        ints
+          .filter(_ % 2 == 0)
+          .take(5)
+
+      eventsOccurredShouldBe(0)
+
+      filtered.forced shouldBe List(0, 2, 4, 6, 8)
+    }
+  }
+
+  test("takeWhile") {
+    new Environment {
+      val timeline: Timeline[Int] =
+        Timeline(
+          sideEffect(1),
+          sideEffect(2),
+          sideEffect(3),
+          sideEffect(4),
+          sideEffect(5),
+          sideEffect(6)
+        )
+
+      // format: OFF
+      val t1 = timeline.takeWhile(_  % 2 != 0)
+      val t2 = timeline.takeWhile(_  < 3)
+      val t3 = timeline.takeWhile(_ <= 3)
+      // format: ON
+
+      t1.forced shouldBe List(1)
+      t2.forced shouldBe List(1, 2)
+      t3.forced shouldBe List(1, 2, 3)
+    }
+  }
+
+  test("find") {
+    val timeline: Timeline[Int] =
+      Timeline(1, 2, 3, 4, 5, 6)
+
+    // format: OFF
+    timeline.find(_  % 2 != 0) shouldBe Some(1)
+    timeline.find(_  % 2 == 0) shouldBe Some(2)
+    timeline.find(_  < 3     ) shouldBe Some(1)
+    timeline.find(_ <= 3     ) shouldBe Some(1)
+    timeline.find(_ >= 7     ) shouldBe None
+    // format: ON
+  }
+
+  test("aggregated1") {
+    new Environment {
+      def ascending(seed: Int): Timeline[Int] =
+        sideEffect(seed) #:: ascending(seed + 1)
+
+      val ints: Timeline[Int] =
+        ascending(seed = 0)
+
+      val zeroOneTwoThree: Timeline[Int] =
+        ints.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      zeroOneTwoThree.aggregated shouldBe 6
+    }
+  }
+
+  test("aggregated2") {
+    new Environment {
+      def ascending(seed: Int): Timeline[Int] =
+        sideEffect(seed) #:: ascending(seed + 1)
+
+      val ints: Timeline[Int] =
+        ascending(seed = 0)
+
+      val threeFourFiveSix: Timeline[Int] =
+        ints
+          .filter(_ >= 3)
+          .take(4)
+
+      val sevenEightNine: Timeline[Int] =
+        ints
+          .filter(_ >= 7)
+          .take(3)
+
+      eventsOccurredShouldBe(0)
+
+      val timeline: Timeline[Timeline[Int]] =
+        Timeline(
+          sideEffect(zeroOneTwo),
+          sideEffect(threeFourFiveSix),
+          sideEffect(sevenEightNine)
+        )
+
+      eventsOccurredShouldBe(0)
+
+      val flattened: Timeline[Int] =
+        timeline.aggregated
+
+      // eventsOccurredShouldBe(0)
+
+      flattened.forced shouldBe List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+      timeline.flatten.forced shouldBe List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+    }
+  }
+
+  test("reduce") {
+    new Environment {
+      lazy val a: Boolean = sideEffect(true)
+      lazy val b: Boolean = sideEffect(false)
+      lazy val c: Boolean = sideEffect(false)
+
+      // format: OFF
+      a ||
+      b ||
+      c shouldBe true
+      // format: ON
+
+      eventsOccurredShouldBe(1)
+    }
+  }
+
+  test("reduce2") {
+    new Environment {
+      lazy val a: Boolean = sideEffect(true)
+      lazy val b: Boolean = sideEffect(false)
+      lazy val c: Boolean = sideEffect(false)
+
+      val timeline: Timeline[Boolean] =
+        Timeline(
+          a,
+          b,
+          c
+        )
+
+      timeline.foldLeft(false)(_ || _) shouldBe true
+      eventsOccurredShouldBe(1)
+
+      resetEventsOccurredCounter()
+      timeline.aggregated(BooleanAddition) shouldBe true
+
+      timeline.reduceLeft(_ || _) shouldBe Some(true)
+      timeline.reduceLeftOrThrowException(_ || _) shouldBe true
+    }
+  }
+
+  test("reduce3") {
+    new Environment {
+      lazy val a: Boolean = sideEffect(true)
+      lazy val b: Boolean = sideEffect(false)
+      lazy val c: Boolean = sideEffect(false)
+
+      val list: List[Boolean] =
+        List(
+          a,
+          b,
+          c
+        )
+
+      list.foldLeft(false)(_ || _) shouldBe true
+      // eventsOccurredShouldBe(1)
+
+      resetEventsOccurredCounter()
+      list.aggregated(BooleanAddition) shouldBe true
+
+      list.reduceLeft(_ || _) shouldBe Some(true)
+      list.reduceLeftOrThrowException(_ || _) shouldBe true
+    }
+  }
+
+  test("unapply1") {
+    new Environment {
+      zeroOneTwo should matchPattern { // format: OFF
+        case Timeline.NonEmpty(recentEvent, previousEvents)
+         if recentEvent.unsafeRun()      ==      0  &&
+         previousEvents.unsafeRun().head == Some(1) =>
+      } // format: ON
+    }
+  }
+
+  test("unapply2") {
+    new Environment {
+      zeroOneTwo should matchPattern {
+        case Timeline.NonEmpty(recentEvent, previousEvents) =>
+      }
+
+      eventsOccurredShouldBe(0)
+    }
+  }
+
+  test("unapply3") {
+    new Environment {
+      zeroOneTwo should matchPattern {
+        case Timeline(0, 1, 2) =>
+      }
+
+      eventsOccurredShouldBe(3)
+    }
+  }
+
   abstract class Environment {
     private[this] var eventsOccurred: Int = 0
 
