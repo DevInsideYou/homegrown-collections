@@ -17,6 +17,7 @@ autoStartServer := false
 scalacOptions ++=
   Seq(
     "-feature",
+    "-deprecation",
     "-language:implicitConversions",
     "-language:higherKinds"/*,
     "-P:continuations:enable"*/

@@ -1,4 +1,4 @@
-import scala.collection.Map
+import scala.collection.immutable.Map
 
 object StandardLibraryMapJoin {
   final implicit class DSL[Key, ThisValue](private val self: Map[Key, ThisValue]) {

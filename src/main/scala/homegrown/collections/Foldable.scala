@@ -68,7 +68,7 @@ trait Foldable[+Element] {
 }
 
 object Foldable {
-  implicit def viewFromTraversableToFoldableFromHGC[Element](from: Traversable[Element]): Foldable[Element] =
+  implicit def viewFromIterableToFoldableFromHGC[Element](from: Iterable[Element]): Foldable[Element] =
     new Foldable[Element] {
       final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result =
         from.foldLeft(seed)(function)
@@ -79,13 +79,23 @@ object Foldable {
         }
     }
 
-  implicit def viewFromFoldableToTraversableFromHGC[Element](from: Foldable[Element]): Traversable[Element] =
-    new Traversable[Element] {
-      final override def foreach[Result](function: Element => Result): Unit = {
-        from.foreach(function)
-      }
+  // implicit def viewFromFoldableToIterableFromHGC[Element](from: Foldable[Element]): Iterable[Element] =
+  //   new Iterable[Element] {
+  //     final override def iterator: Iterator[Element] =
+  //       new Iterator[Element] {
+  //         private[this] var timeline: Timeline[Element] =
+  //           from.foldRight[Timeline[Element]](Timeline.End)(_ #:: _)
 
-      final override def iterator: Iterator[Element] =
-        ???
-    }
+  //         final override def hasNext: Boolean =
+  //           timeline != Timeline.End
+
+  //         final override def next(): Element = {
+  //           val result = timeline.head.get
+
+  //           timeline = timeline.tail
+
+  //           result
+  //         }
+  //       }
+  //   }
 }

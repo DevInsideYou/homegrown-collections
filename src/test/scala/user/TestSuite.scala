@@ -1,6 +1,6 @@
 package user
 
 import org.scalatest._
-import org.scalatest.prop._
+import org.scalatestplus.scalacheck._
 
-trait TestSuite extends FunSuite with Matchers with PropertyChecks
+trait TestSuite extends FunSuite with Matchers with ScalaCheckPropertyChecks
