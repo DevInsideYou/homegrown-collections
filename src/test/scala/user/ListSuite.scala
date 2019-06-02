@@ -145,4 +145,64 @@ class ListSuite extends TestSuite {
     List(2, 4).aggregated(IntAddition) shouldBe 6
     List(2, 4).aggregated(IntMultiplication) shouldBe 8
   }
+
+  test("take") {
+    val list: List[Int] =
+      List(0, 1, 2)
+
+    list.take(-1) shouldBe List.empty
+    list.take(0) shouldBe List.empty
+    list.take(1) shouldBe List(0)
+    list.take(2) shouldBe List(0, 1)
+    list.take(3) shouldBe List(0, 1, 2)
+    list.take(4) shouldBe List(0, 1, 2)
+    list shouldBe List(0, 1, 2)
+  }
+
+  test("apply") {
+    val list: List[String] =
+      List(0, 1, 2).map(_.toString)
+
+    list(-1) shouldBe None
+    list(0) shouldBe Some("0")
+    list(1) shouldBe Some("1")
+    list(2) shouldBe Some("2")
+    list(3) shouldBe None
+  }
+
+  test("zip") {
+    List.empty zip List.empty shouldBe List.empty
+
+    List(0, 1) zip List('a', 'b', 'c') shouldBe List(
+      0 -> 'a',
+      1 -> 'b'
+    )
+
+    List(0, 1, 2) zip List('a', 'b') shouldBe List(
+      0 -> 'a',
+      1 -> 'b'
+    )
+
+    List(0, 1, 2) zip List('a', 'b', 'c') shouldBe List(
+      0 -> 'a',
+      1 -> 'b',
+      2 -> 'c'
+    )
+  }
+
+  test("interleave") {
+    List.empty interleave List.empty shouldBe List.empty
+
+    List(0, 1, 2, 3) interleave List(10) shouldBe List(
+      0, 10, 1, 2, 3
+    )
+
+    List(0) interleave List(10, 11, 12, 13) shouldBe List(
+      0, 10, 11, 12, 13
+    )
+
+    List(0, 1, 2, 3) interleave List(10, 11, 12, 13) shouldBe List(
+      0, 10, 1, 11, 2, 12, 3, 13
+    )
+  }
 }

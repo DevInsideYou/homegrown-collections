@@ -3,11 +3,35 @@ package collections
 
 import mathlibrary._
 
-sealed abstract class List[+Element] extends FoldableFactory[Element, List] {
+sealed abstract class List[+Element]
+  extends FoldableFactory[Element, List]
+  with (Int => Option[Element]) {
   import List._
 
   final override protected def factory: Factory[List] =
     List
+
+  final override def apply(index: Int): Option[Element] = {
+    @scala.annotation.tailrec
+    def loop(
+        list: List[Element],
+        count: Int
+    ): Option[Element] =
+      if (index < 0)
+        None
+      else if (count == index)
+        list.head
+      else
+        loop(list.tail, count + 1)
+
+    loop(this, 0)
+  }
+
+  final def isEmpty: Boolean =
+    this.isInstanceOf[Empty.type]
+
+  final def nonEmpty: Boolean =
+    !isEmpty
 
   @scala.annotation.tailrec
   final override def foldLeft[Result](seed: Result)(function: (Result, Element) => Result): Result = this match {
@@ -57,6 +81,30 @@ sealed abstract class List[+Element] extends FoldableFactory[Element, List] {
         Some(element) -> otherElements
     }
 
+  final def take(amount: Int): List[Element] = {
+    @scala.annotation.tailrec
+    def loop(
+        list: List[Element],
+        acc: List[Element],
+        count: Int
+    ): List[Element] = list match {
+      case Empty =>
+        acc
+
+      case NonEmpty(element, otherElements) =>
+        if (count >= amount)
+          acc
+        else
+          loop(
+            list  = otherElements,
+            acc   = element :: acc,
+            count = count + 1
+          )
+    }
+
+    loop(this, empty, 0).reversed
+  }
+
   final def reversed: List[Element] =
     foldLeft[List[Element]](empty)(_ add _)
 
@@ -68,6 +116,30 @@ sealed abstract class List[+Element] extends FoldableFactory[Element, List] {
     case NonEmpty(element, otherElements) =>
       s"${element}${otherElements.splitByCommaSpace}"
   }
+
+  final def zip[ThatElement](that: List[ThatElement]): List[(Element, ThatElement)] =
+    this match {
+      case Empty =>
+        Empty
+
+      case NonEmpty(element, otherElements) =>
+        that match {
+          case Empty =>
+            Empty
+
+          case NonEmpty(thatElement, thatOtherElements) =>
+            element -> thatElement :: otherElements.zip(thatOtherElements)
+        }
+    }
+
+  final def interleave[Super >: Element](that: List[Super]): List[Super] =
+    this match {
+      case Empty =>
+        that
+
+      case NonEmpty(element, otherElements) =>
+        element :: that.interleave(otherElements)
+    }
 }
 
 object List extends Factory[List] {
