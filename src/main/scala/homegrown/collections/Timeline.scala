@@ -87,7 +87,7 @@ final class Timeline[+Event] private (
       case Timeline.End =>
         ""
 
-      case Timeline.NonEmpty(recentEvent, previousEvents) =>
+      case Timeline.NonEmpty(recentEvent, followingEvents) =>
         s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
     }
 
@@ -117,13 +117,13 @@ object Timeline {
   object NonEmpty {
     def apply[Event](
         recentEvent: IO[Event],
-        previousEvents: IO[Timeline[Event]]
+        followingEvents: IO[Timeline[Event]]
     ): Timeline[Event] =
       Timeline(
-        previousEvents.map { timeline =>
+        followingEvents.map { timeline =>
           Data.NonEmpty(
-            recentEvent    = recentEvent,
-            previousEvents = timeline.data
+            recentEvent     = recentEvent,
+            followingEvents = timeline.data
           )
         }
       )
@@ -133,8 +133,8 @@ object Timeline {
         case Data.End =>
           None
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
-          Some(recentEvent -> IO.pure(Timeline(previousEvents)))
+        case Data.NonEmpty(recentEvent, followingEvents) =>
+          Some(recentEvent -> IO.pure(Timeline(followingEvents)))
       }
   }
 
@@ -155,8 +155,8 @@ object Timeline {
   implicit final class TimelineOpsFromHGC[Event](timeline: => Timeline[Event]) {
     final def add[Super >: Event](input: => Super): Timeline[Super] =
       NonEmpty(
-        recentEvent    = IO.pure(input),
-        previousEvents = IO.pure(timeline)
+        recentEvent     = IO.pure(input),
+        followingEvents = IO.pure(timeline)
       )
 
     @inline final def prepend[Super >: Event](input: => Super): Timeline[Super] =
@@ -280,6 +280,37 @@ object Timeline {
   ): Timeline[Event] =
     Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, followingEvents: _*)))
 
+  @inline final def generateSame[Event](seed: => Event): Timeline[Event] =
+    generate(seed)(identity)
+
+  @inline final def generate[Event](seed: => Event)(
+      next: Event => Event
+  ): Timeline[Event] =
+    canonicalGenerateTransform(seed)(next, identity)
+
+  @inline final def generateTransform[Gen, Event](seed: => Gen)(
+      next: (=> Gen) => (IO[Event], IO[Gen])
+  ): Timeline[Event] =
+    unfold(seed)(next andThen Some.apply)
+
+  final def unfold[Gen, Event](seed: => Gen)(
+      next: (=> Gen) => Option[(IO[Event], IO[Gen])]
+  ): Timeline[Event] =
+    Timeline(IO.pure(Data.unfold(seed)(next)))
+
+  @inline final def canonicalGenerateTransform[Gen, Event](seed: => Gen)(
+      next: Gen => Gen,
+      transform: Gen => Event
+  ): Timeline[Event] =
+    canonicalUnfold(seed)(next, transform, _ => false)
+
+  final def canonicalUnfold[Gen, Event](seed: => Gen)(
+      next: Gen => Gen,
+      transform: Gen => Event,
+      shouldFinish: (=> Gen) => Boolean
+  ): Timeline[Event] =
+    Timeline(IO.pure(Data.canonicalUnfold(seed)(next, transform, shouldFinish)))
+
   implicit def arbitrary[T](implicit arbitrary: Arbitrary[IO[T]]): Arbitrary[Timeline[T]] =
     Arbitrary(gen[T])
 
@@ -346,8 +377,8 @@ object Timeline {
         case Data.End =>
           Data.End
 
-        case Data.NonEmpty(_, previousEvents) =>
-          previousEvents.unsafeRun()
+        case Data.NonEmpty(_, followingEvents) =>
+          followingEvents.unsafeRun()
       }
 
     final def isEmpty: Boolean =
@@ -362,9 +393,9 @@ object Timeline {
         case Data.End =>
           seed
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
+        case Data.NonEmpty(recentEvent, followingEvents) =>
           val currentResult = function(seed, recentEvent.unsafeRun())
-          previousEvents.unsafeRun().foldLeft(currentResult)(function)
+          followingEvents.unsafeRun().foldLeft(currentResult)(function)
       }
 
     final override def foldRight[Result](seed: => Result)(function: (=> Event, => Result) => Result): Result =
@@ -372,8 +403,8 @@ object Timeline {
         case Data.End =>
           seed
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
-          lazy val otherResult = previousEvents.unsafeRun().foldRight(seed)(function)
+        case Data.NonEmpty(recentEvent, followingEvents) =>
+          lazy val otherResult = followingEvents.unsafeRun().foldRight(seed)(function)
           function(recentEvent.unsafeRun(), otherResult)
       }
 
@@ -387,7 +418,7 @@ object Timeline {
         case Data.End =>
           acc
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
+        case Data.NonEmpty(recentEvent, followingEvents) =>
           lazy val nextCount =
             count + 1
 
@@ -400,7 +431,7 @@ object Timeline {
             nextAcc
           else
             loop(
-              data  = previousEvents.unsafeRun(),
+              data  = followingEvents.unsafeRun(),
               acc   = nextAcc,
               count = nextCount
             )
@@ -471,7 +502,7 @@ object Timeline {
         case Data.End =>
           ""
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
+        case Data.NonEmpty(recentEvent, followingEvents) =>
           s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
       }
 
@@ -480,15 +511,15 @@ object Timeline {
         case Data.End =>
           Data.End
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
+        case Data.NonEmpty(recentEvent, followingEvents) =>
           that match {
             case Data.End =>
               Data.End
 
-            case Data.NonEmpty(thatRecentEvent, thatPreviousEvents) =>
-              previousEvents
+            case Data.NonEmpty(thatRecentEvent, thatFollowingEvents) =>
+              followingEvents
                 .unsafeRun()
-                .zip(thatPreviousEvents.unsafeRun())
+                .zip(thatFollowingEvents.unsafeRun())
                 .after(recentEvent.unsafeRun() -> thatRecentEvent.unsafeRun())
           }
       }
@@ -498,8 +529,8 @@ object Timeline {
         case Data.End =>
           that
 
-        case Data.NonEmpty(recentEvent, previousEvents) =>
-          recentEvent.unsafeRun() #:: that.interleave(previousEvents.unsafeRun())
+        case Data.NonEmpty(recentEvent, followingEvents) =>
+          recentEvent.unsafeRun() #:: that.interleave(followingEvents.unsafeRun())
       }
 
     final def forced: List[Event] =
@@ -515,17 +546,17 @@ object Timeline {
   private object Data {
     final case class NonEmpty[+Event] private (
         recentEvent: IO[Event],
-        previousEvents: IO[Data[Event]]
+        followingEvents: IO[Data[Event]]
     ) extends Data[Event]
 
     object NonEmpty {
       def apply[Event](
           recentEvent: IO[Event],
-          previousEvents: IO[Data[Event]]
+          followingEvents: IO[Data[Event]]
       ): Data[Event] =
         new NonEmpty(
-          recentEvent    = recentEvent.memoized,
-          previousEvents = previousEvents.memoized
+          recentEvent     = recentEvent.memoized,
+          followingEvents = followingEvents.memoized
         )
     }
 
@@ -534,8 +565,8 @@ object Timeline {
     implicit final class DataOpsFromHGC[Event](data: => Data[Event]) {
       final def add[Super >: Event](input: => Super): Data[Super] =
         NonEmpty(
-          recentEvent    = IO.pure(input),
-          previousEvents = IO.pure(data)
+          recentEvent     = IO.pure(input),
+          followingEvents = IO.pure(data)
         )
 
       @inline final def prepend[Super >: Event](input: => Super): Data[Super] =
@@ -658,5 +689,29 @@ object Timeline {
         followingEvents: IO[Event]*
     ): Data[Event] =
       first #:: apply(second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth) #::: followingEvents.foldRight[Data[Event]](Data.End)(_.unsafeRun() #:: _)
+
+    @inline final def unfold[Gen, Event](seed: => Gen)(
+        next: (=> Gen) => Option[(IO[Event], IO[Gen])]
+    ): Data[Event] =
+      canonicalUnfold(seed)(
+        next         = gen => next(gen).get._2.unsafeRun(),
+        transform    = gen => next(gen).get._1.unsafeRun(),
+        shouldFinish = gen => next(gen).isEmpty
+      )
+
+    final def canonicalUnfold[Gen, Event](seed: => Gen)(
+        next: Gen => Gen,
+        transform: Gen => Event,
+        shouldFinish: (=> Gen) => Boolean
+    ): Data[Event] = {
+      lazy val memoizedSeed = seed
+
+      if (shouldFinish(memoizedSeed))
+        Data.End
+      else if (shouldFinish(next(memoizedSeed)))
+        transform(memoizedSeed) #:: Data.End
+      else
+        transform(memoizedSeed) #:: canonicalUnfold(next(seed))(next, transform, shouldFinish)
+    }
   }
 }

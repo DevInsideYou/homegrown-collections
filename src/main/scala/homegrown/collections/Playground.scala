@@ -62,7 +62,7 @@ object Playground extends App {
   //   val read: Timeline[String] =
   //     Timeline.NonEmpty(
   //       recentEvent    = IO.pure("Vlad"),
-  //       previousEvents = IO.pure(Timeline.End)
+  //       followingEvents = IO.pure(Timeline.End)
   //     )
 
   //   def write(input: => Any): IO[Unit] =
@@ -71,7 +71,7 @@ object Playground extends App {
   //   lazy val timeline: Timeline[Unit] =
   //     Timeline.NonEmpty(
   //       recentEvent    = write("What's your name?"),
-  //       previousEvents = IO.pure {
+  //       followingEvents = IO.pure {
   //         read match {
   //           case Timeline.End =>
   //             Timeline.End
@@ -79,7 +79,7 @@ object Playground extends App {
   //           case Timeline.NonEmpty(recentEvent, _) =>
   //             Timeline.NonEmpty(
   //               recentEvent    = write(s"My name is ${recentEvent.unsafeRun()}."),
-  //               previousEvents = IO.pure(Timeline.End)
+  //               followingEvents = IO.pure(Timeline.End)
   //             )
   //         }
   //       }
@@ -105,24 +105,15 @@ object Playground extends App {
 
   runTimeline {
     lazy val timeline: Timeline[Unit] =
-      questions
-        .interleave(alternativeQuestions)
+      "What's your name?".timeline
+        .interleave("What's your full name?".timeline)
         .map(println)
-        .zip(read)
+        .zip(readLine().timeline)
         .map {
           case (_, name) => name
         }
         .map(name => s"My name is $name.")
         .map(println) #::: timeline
-
-    lazy val questions: Timeline[String] =
-      "What's your name?" #:: questions
-
-    lazy val alternativeQuestions: Timeline[String] =
-      "What's your full name?" #:: alternativeQuestions
-
-    lazy val read: Timeline[String] =
-      readLine() #:: read
 
     timeline.take(4)
   }

@@ -12,12 +12,217 @@ final class TimelineSuiteWithoutMemoization extends TimelineSuite {
 }
 
 sealed abstract class TimelineSuite extends TestSuite {
+  test("gen0") {
+    new Environment {
+      val zeros: Timeline[Int] =
+        sideEffect(0).timeline
+
+      val fourZeros: Timeline[Int] =
+        zeros.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[Int] =
+        fourZeros.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 0, 0, 0)
+    }
+
+    new Environment {
+      def zeros: Timeline[Int] =
+        sideEffect(0).timeline
+
+      val fourZeros: Timeline[Int] =
+        zeros.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[Int] =
+        fourZeros.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 0, 0, 0)
+    }
+  }
+
+  test("gen1") {
+    new Environment {
+      val ints: Timeline[Int] =
+        sideEffect(0).timeline(_ + 1)
+
+      val zeroOneTwoThree: Timeline[Int] =
+        ints.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[Int] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3)
+    }
+  }
+
+  test("gen2") {
+    final case class BankAccount(balance: Int)
+
+    new Environment {
+      val ints: Timeline[BankAccount] =
+        sideEffect(0).timelineTransform(_ + 1, BankAccount)
+
+      val zeroOneTwoThree: Timeline[BankAccount] =
+        ints.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[BankAccount] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3).map(BankAccount)
+    }
+
+    new Environment {
+      val ints: Timeline[BankAccount] =
+        sideEffect(0).timelineTransform { n =>
+          BankAccount(n).io -> (n + 1).io
+        }
+
+      val zeroOneTwoThree: Timeline[BankAccount] =
+        ints.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[BankAccount] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3).map(BankAccount)
+    }
+  }
+
+  test("gen3") {
+    final case class BankAccount(balance: Int)
+
+    new Environment {
+      val ints: Timeline[BankAccount] =
+        sideEffect(0).unfold(_ + 1, BankAccount, _ => false)
+
+      val zeroOneTwoThree: Timeline[BankAccount] =
+        ints.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[BankAccount] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3).map(BankAccount)
+    }
+
+    new Environment {
+      val ints: Timeline[BankAccount] =
+        sideEffect(0).unfold(_ + 1, BankAccount, _ == 4)
+
+      val zeroOneTwoThree: Timeline[BankAccount] =
+        ints //.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[BankAccount] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3).map(BankAccount)
+    }
+
+    new Environment {
+      val ints: Timeline[BankAccount] =
+        sideEffect(0).unfold { n =>
+          if (n == 4)
+            None
+          else
+            Some(BankAccount(n).io -> (n + 1).io)
+        }
+
+      val zeroOneTwoThree: Timeline[BankAccount] =
+        ints //.take(4)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[BankAccount] =
+        zeroOneTwoThree.forced
+
+      eventsOccurredShouldBe(4)
+
+      list shouldBe List(0, 1, 2, 3).map(BankAccount)
+    }
+  }
+
+  test("gen4") {
+    new Environment {
+      val timeline1: Timeline[Int] =
+        sideEffect(0).unfold(n => Some(n.io -> n.io))
+
+      val timeline2: Timeline[Int] =
+        sideEffect(10).unfold(n => Some(n.io -> n.io))
+
+      val result: Timeline[Int] =
+        timeline1.interleave(timeline2).take(2)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[Int] =
+        result.forced
+
+      eventsOccurredShouldBe(2)
+
+      list shouldBe List(0, 10)
+    }
+
+    new Environment {
+      val timeline1: Timeline[Int] =
+        sideEffect(0).unfold(
+          next         = identity,
+          transform    = identity,
+          shouldFinish = _ => false
+        )
+
+      val timeline2: Timeline[Int] =
+        sideEffect(10).unfold(
+          next         = identity,
+          transform    = identity,
+          shouldFinish = _ => false
+        )
+
+      val result: Timeline[Int] =
+        timeline1.interleave(timeline2).take(2)
+
+      eventsOccurredShouldBe(0)
+
+      val list: List[Int] =
+        result.forced
+
+      eventsOccurredShouldBe(2)
+
+      list shouldBe List(0, 10)
+    }
+  }
+
   test("init1") {
     new Environment {
       val timeline: Timeline[Int] =
         Timeline.NonEmpty(
-          recentEvent    = IO.pure(sideEffect(0)),
-          previousEvents = IO.pure(Timeline.End)
+          recentEvent     = IO.pure(sideEffect(0)),
+          followingEvents = IO.pure(Timeline.End)
         )
 
       eventsOccurredShouldBe(0)
@@ -35,14 +240,14 @@ sealed abstract class TimelineSuite extends TestSuite {
     new Environment {
       testHead {
         Timeline.NonEmpty(
-          recentEvent    = IO.pure(sideEffect(0)),
-          previousEvents = IO.pure(
+          recentEvent     = IO.pure(sideEffect(0)),
+          followingEvents = IO.pure(
             Timeline.NonEmpty(
-              recentEvent    = IO.pure(sideEffect(1)),
-              previousEvents = IO.pure(
+              recentEvent     = IO.pure(sideEffect(1)),
+              followingEvents = IO.pure(
                 Timeline.NonEmpty(
-                  recentEvent    = IO.pure(sideEffect(2)),
-                  previousEvents = IO.pure(Timeline.End)
+                  recentEvent     = IO.pure(sideEffect(2)),
+                  followingEvents = IO.pure(Timeline.End)
                 )
               )
             )
@@ -700,9 +905,9 @@ sealed abstract class TimelineSuite extends TestSuite {
   test("unapply1") {
     new Environment {
       zeroOneTwo should matchPattern { // format: OFF
-        case Timeline.NonEmpty(recentEvent, previousEvents)
+        case Timeline.NonEmpty(recentEvent, followingEvents)
          if recentEvent.unsafeRun()      ==      0  &&
-         previousEvents.unsafeRun().head == Some(1) =>
+         followingEvents.unsafeRun().head == Some(1) =>
       } // format: ON
     }
   }
@@ -710,7 +915,7 @@ sealed abstract class TimelineSuite extends TestSuite {
   test("unapply2") {
     new Environment {
       zeroOneTwo should matchPattern {
-        case Timeline.NonEmpty(recentEvent, previousEvents) =>
+        case Timeline.NonEmpty(recentEvent, followingEvents) =>
       }
 
       eventsOccurredShouldBe(0)

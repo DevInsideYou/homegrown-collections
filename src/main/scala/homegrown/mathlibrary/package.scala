@@ -43,11 +43,11 @@ package object mathlibrary {
     chaining == nesting
   } // format: ON
 
-  def identity[A: Arbitrary: Magma](
+  def identityLaw[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A],
       uniqueIdentityElement: A
   ): Law = forAll { a: A => // format: OFF
-    Predef.identity(a)               == a &&
+    identity(a)                      == a &&
     a.combine(uniqueIdentityElement) == a && //  left identity
     uniqueIdentityElement.combine(a) == a    // right identity
   } // format: ON
