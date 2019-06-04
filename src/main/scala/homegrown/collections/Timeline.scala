@@ -280,6 +280,28 @@ object Timeline {
   ): Timeline[Event] =
     Timeline(IO.pure(Data(first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, followingEvents: _*)))
 
+  case object Int {
+    final def asc(from: Int): Timeline[Int] =
+      from.timeline(_ + 1)
+
+    final def desc(from: Int): Timeline[Int] =
+      from.timeline(_ - 1)
+
+    object Range {
+      final def inclusive(from: Int, to: Int): Timeline[Int] =
+        if (from > to)
+          Timeline.End
+        else
+          from #:: inclusive(from + 1, to)
+
+      final def exclusive(from: Int, to: Int): Timeline[Int] =
+        if (from >= to)
+          Timeline.End
+        else
+          from #:: exclusive(from + 1, to)
+    }
+  }
+
   @inline final def generateSame[Event](seed: => Event): Timeline[Event] =
     generate(seed)(identity)
 
@@ -445,8 +467,10 @@ object Timeline {
 
     final def filter(predicate: Event => Boolean): Data[Event] =
       foldRight[Data[Event]](Data.End) { (current, acc) =>
-        if (predicate(current))
-          current #:: acc
+        val memoizedCurrent = current
+
+        if (predicate(memoizedCurrent))
+          memoizedCurrent #:: acc
         else
           acc
       }
@@ -456,8 +480,10 @@ object Timeline {
 
     final def takeWhile(predicate: Event => Boolean): Data[Event] =
       foldRight[Data[Event]](Data.End) { (current, acc) =>
-        if (predicate(current))
-          current #:: acc
+        val memoizedCurrent = current
+
+        if (predicate(memoizedCurrent))
+          memoizedCurrent #:: acc
         else
           Data.End
       }

@@ -12,6 +12,221 @@ final class TimelineSuiteWithoutMemoization extends TimelineSuite {
 }
 
 sealed abstract class TimelineSuite extends TestSuite {
+  test("numbers") {
+    lazy val ones: Timeline[Int] =
+      1 #:: ones
+
+    ones.take(5) shouldBe Timeline(1, 1, 1, 1, 1)
+
+    val ones2: Timeline[Int] =
+      1.timeline
+
+    ones2.take(5) shouldBe Timeline(1, 1, 1, 1, 1)
+
+    def ints(seed: Int): Timeline[Int] =
+      seed #:: ints(seed + 1)
+
+    ints(seed = 0).take(5) shouldBe Timeline(0, 1, 2, 3, 4)
+
+    def ints2(seed: Int): Timeline[Int] =
+      seed.timeline(_ + 1)
+
+    ints2(seed = 0).take(5) shouldBe Timeline(0, 1, 2, 3, 4)
+
+    def ints3(seed: Int): Timeline[Int] =
+      seed #:: ones.zip(ints3(seed)).map {
+        case (one, acc) => acc + one
+      }
+
+    ints3(seed = 0).take(5) shouldBe Timeline(0, 1, 2, 3, 4)
+
+    Timeline.Int.asc(from = 0).take(5) shouldBe Timeline(0, 1, 2, 3, 4)
+    Timeline.Int.desc(from = 10).take(3) shouldBe Timeline(10, 9, 8)
+
+    Timeline.Int.Range.inclusive(5, 9) shouldBe Timeline(5, 6, 7, 8, 9)
+    Timeline.Int.Range.exclusive(5, 9) shouldBe Timeline(5, 6, 7, 8)
+
+    Timeline.Int.Range.inclusive(9, 5) shouldBe Timeline.End
+    Timeline.Int.Range.exclusive(9, 5) shouldBe Timeline.End
+  }
+
+  test("factorial") {
+    def assert(timeline: Timeline[Int]): Unit = {
+      timeline.take(10) shouldBe Timeline(1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880)
+    }
+
+    val factorialTimeline: Timeline[Int] = {
+      def recursiveFactorial(n: Int): Int = {
+        @scala.annotation.tailrec
+        def loop(x: Int, acc: Int): Int =
+          if (x == 0)
+            acc
+          else
+            loop(
+              x   = x - 1,
+              acc = acc * x
+            )
+
+        loop(n, 1)
+      }
+
+      Timeline.Int.asc(from = 0).map(recursiveFactorial)
+    }
+
+    assert(factorialTimeline)
+
+    val factorialTimeline2: Timeline[Int] = {
+      def corecursiveFactorial(x: Int, acc: Int): Timeline[Int] = {
+        val next = x + 1
+
+        acc #:: corecursiveFactorial(next, acc * next)
+      }
+
+      corecursiveFactorial(x   = 0, acc = 1)
+    }
+
+    assert(factorialTimeline2)
+
+    lazy val factorialTimeline3: Timeline[Int] =
+      1 #:: Timeline.Int.asc(from = 1).zip(factorialTimeline3).map {
+        case (x, acc) => acc * x
+      }
+
+    assert(factorialTimeline3)
+  }
+
+  test("fibonacci") {
+    def assert(timeline: Timeline[Int]): Unit = {
+      timeline.take(10) shouldBe Timeline(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
+    }
+
+    val fibonacciTimeline: Timeline[Int] = {
+      def recursiveFibonacci(n: Int): Int = {
+        @scala.annotation.tailrec
+        def loop(x: Int, acc1: Int, acc2: Int): Int =
+          if (x == 0)
+            acc1
+          else if (x == 1)
+            acc2
+          else
+            loop(
+              x    = x - 1,
+              acc1 = acc2,
+              acc2 = acc1 + acc2
+            )
+
+        loop(n, 0, 1)
+      }
+
+      Timeline.Int.asc(from = 0).map(recursiveFibonacci)
+    }
+
+    assert(fibonacciTimeline)
+
+    val fibonacciTimeline2: Timeline[Int] = {
+      def corecursiveFibonacci(a: Int, b: Int): Timeline[Int] =
+        a #:: corecursiveFibonacci(b, a + b)
+
+      corecursiveFibonacci(a = 0, b = 1)
+    }
+
+    assert(fibonacciTimeline2)
+
+    lazy val fibonacciTimeline3: Timeline[Int] =
+      0 #:: 1 #:: fibonacciTimeline3.zip(fibonacciTimeline3.tail).map {
+        case (a, b) => a + b
+      }
+
+    assert(fibonacciTimeline3)
+  }
+
+  test("primes") {
+    def assert(timeline: Timeline[Int]): Unit = {
+      timeline.take(10) shouldBe Timeline(2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+    }
+
+    val primesTimeline: Timeline[Int] = {
+      def recursiveIsPrime(n: Int): Boolean = {
+        @scala.annotation.tailrec
+        def loop(x: Int): Boolean =
+          if (x == 1)
+            true
+          else if (n % x == 0)
+            false
+          else
+            loop(x - 1)
+
+        loop(n - 1)
+      }
+
+      Timeline.Int.asc(from = 2).filter(recursiveIsPrime)
+    }
+
+    assert(primesTimeline)
+
+    lazy val primesTimeline2: Timeline[Int] = {
+      def recursiveIsPrime2(n: Int): Boolean = {
+        def loop(primes: Timeline[Int]): Boolean =
+          primes.head.exists { p =>
+            if (n < p * p)
+              true
+            else if (n % p == 0)
+              false
+            else
+              loop(primes.tail)
+          }
+
+        loop(primesTimeline2)
+      }
+
+      2 #:: Timeline.Int.asc(from = 3).filter(recursiveIsPrime2)
+    }
+
+    assert(primesTimeline2)
+
+    lazy val primesTimeline3: Timeline[Int] = {
+      def sieve(timeline: Timeline[Int]): Timeline[Int] =
+        timeline match {
+          case Timeline.End =>
+            Timeline.End
+
+          case Timeline.NonEmpty(recentEvent, followingEvents) =>
+            recentEvent.unsafeRun() #:: sieve(
+              followingEvents.unsafeRun().filter(_ % recentEvent.unsafeRun() != 0)
+            )
+        }
+
+      sieve(Timeline.Int.asc(from = 2))
+    }
+
+    assert(primesTimeline3)
+
+    new Environment {
+      lazy val primesTimeline3: Timeline[Int] = {
+        def sieve(timeline: Timeline[Int]): Timeline[Int] =
+          timeline match {
+            case Timeline.End =>
+              Timeline.End
+
+            case Timeline.NonEmpty(recentEvent, followingEvents) =>
+              val memoizedRecentEvent = recentEvent.unsafeRun()
+
+              memoizedRecentEvent #:: sieve(
+                followingEvents.unsafeRun().filter(_ % memoizedRecentEvent != 0)
+              )
+          }
+
+        def ints(from: Int): Timeline[Int] =
+          sideEffect(from) #:: ints(from + 1)
+
+        sieve(ints(from = 2))
+      }
+
+      assert(primesTimeline3)
+      eventsOccurredShouldBe(30, 31)
+    }
+  }
+
   test("gen0") {
     new Environment {
       val zeros: Timeline[Int] =
