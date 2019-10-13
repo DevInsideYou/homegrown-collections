@@ -653,7 +653,7 @@ class SetSuite extends TestSuite {
   }
 
   test("exists with variance") {
-    val (employee, consultant) = bothRoles
+    val (employee, _ /*consultant*/ ) = bothRoles
 
     Set(employee).exists(_ == employee) shouldBe true
     // Set(employee).exists(_ == consultant) shouldBe false // compiles :( with a warning :)
@@ -833,11 +833,9 @@ class SetSuite extends TestSuite {
   }
 
   test("Group Theory") {
-    val setOfIntUnion: Monoid[Set[Int]] =
-      Monoid[Set[Int]]
+    Monoid[Set[Int]]: Monoid[Set[Int]]
 
-    val setOfStringUnion: Monoid[Set[String]] =
-      Set.Union[String]
+    Set.Union[String]: Monoid[Set[String]]
   }
 }
 

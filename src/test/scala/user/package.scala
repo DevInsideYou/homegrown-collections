@@ -1,9 +1,5 @@
 import scala.util.Random
 
-import org.scalacheck._
-
-import homegrown.collections._
-
 package object user {
   def bothRoles: (Employee, Consultant) =
     randomEmployee -> randomConsultant

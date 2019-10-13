@@ -118,11 +118,9 @@ class ListSuite extends TestSuite {
   }
 
   test("Group Theory") {
-    val listOfIntConcatenation: Monoid[List[Int]] =
-      Monoid[List[Int]]
+    Monoid[List[Int]]: Monoid[List[Int]]
 
-    val listOfStringConcatenation: Monoid[List[String]] =
-      List.Concatenation[String]
+    List.Concatenation[String]: Monoid[List[String]]
   }
 
   test("fold should be able to express aggregation") {

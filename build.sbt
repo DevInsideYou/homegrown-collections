@@ -1,37 +1,33 @@
-version := "0.0.1-SNAPSHOT"
+ThisBuild / organization := "com.devinsideyou"
+ThisBuild / scalaVersion := "2.13.1"
+ThisBuild / version      := "1.0.0"
 
-organization := "devinsideyou"
+lazy val `my-project` =
+  project
+    .in(file("."))
+    .settings(
+      name := "homegrown-collections",
+      libraryDependencies ++= Seq(
+        Dependencies.Test.scalacheck,
+        Dependencies.Test.scalatest % Test
+      ),
+      Compile / console / scalacOptions --= Seq(
+        "-Wunused:_",
+        "-Xfatal-warnings"
+      ),
+      Test / console / scalacOptions :=
+        (Compile / console / scalacOptions).value
+    )
 
-scalaVersion := "2.13.0-RC3"
+ThisBuild / scalacOptions ++= Seq(
+  "-deprecation",
+  "-feature",
+  "-language:implicitConversions",
+  "-language:higherKinds",
+  "-Wunused:_",
+  "-Xfatal-warnings"
+)
 
-triggeredMessage := Watched.clearWhenTriggered
-
-initialCommands in console :=
+ThisBuild / console / initialCommands :=
   s"""|import homegrown.collections._
       |import homegrown.mathlibrary._""".stripMargin
-
-addCommandAlias("testc", ";clean;coverage;test;coverageReport")
-
-autoStartServer := false
-
-scalacOptions ++=
-  Seq(
-    "-feature",
-    "-deprecation",
-    "-language:implicitConversions",
-    "-language:higherKinds"/*,
-    "-P:continuations:enable"*/
-  )
-
-libraryDependencies ++=
-  Seq(
-    "org.scalatest" %% "scalatest" % "3.0.8-RC5" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.0"
-    // "org.scala-lang.plugins" %% "scala-continuations-library" % "1.0.3",
-  )
-
-autoCompilerPlugins := true
-
-// addCompilerPlugin("org.scala-lang.plugins" % "scala-continuations-plugin_2.12.2" % "1.0.3")
-
-Test / parallelExecution := false

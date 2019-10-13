@@ -25,7 +25,8 @@ package object mathlibrary {
   def closure[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A]
   ): Law = forAll { (a1: A, a2: A) =>
-    val a3: A = a1 combine a2
+    (a1 combine a2): A
+    operation(a1, a2): A
 
     true
   }
@@ -40,16 +41,23 @@ package object mathlibrary {
                                                 //   a2.combine(a3)
                                                 // )
 
-    chaining == nesting
+    val chaining2 = operation(operation(a1, a2), a3)
+    val nesting2  = operation(a1, operation(a2, a3))
+
+    chaining  == nesting &&
+    chaining2 == nesting2
   } // format: ON
 
   def identityLaw[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A],
       uniqueIdentityElement: A
   ): Law = forAll { a: A => // format: OFF
-    identity(a)                      == a &&
-    a.combine(uniqueIdentityElement) == a && //  left identity
-    uniqueIdentityElement.combine(a) == a    // right identity
+    identity(a)                         == a &&
+    a.combine(uniqueIdentityElement)    == a && //  left identity
+    uniqueIdentityElement.combine(a)    == a && // right identity
+    identity(a)                         == a &&
+    operation(a, uniqueIdentityElement) == a && //  left identity
+    operation(uniqueIdentityElement, a) == a    // right identity
   } // format: ON
 
   def invertibility[A: Arbitrary: Magma](
@@ -57,14 +65,17 @@ package object mathlibrary {
       uniqueIdentityElement: A,
       uniqueInverseElement: A => A
   ): Law = forAll { a: A => // format: OFF
-    a.combine(uniqueInverseElement(a)) == uniqueIdentityElement &&
-    uniqueInverseElement(a).combine(a) == uniqueIdentityElement
+    a.combine(uniqueInverseElement(a))    == uniqueIdentityElement &&
+    uniqueInverseElement(a).combine(a)    == uniqueIdentityElement &&
+    operation(a, uniqueInverseElement(a)) == uniqueIdentityElement &&
+    operation(uniqueInverseElement(a), a) == uniqueIdentityElement
   } // format: ON
 
   def commutativity[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A]
   ): Law = forAll { (a1: A, a2: A) =>
-    a1.combine(a2) == a2.combine(a1)
+    // a1.combine(a2) == a2.combine(a1)
+    operation(a1, a2) == operation(a2, a1)
   }
 
   def distributivity[A: Arbitrary](

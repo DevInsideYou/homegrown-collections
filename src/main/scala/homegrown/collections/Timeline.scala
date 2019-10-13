@@ -87,7 +87,7 @@ final class Timeline[+Event] private (
       case Timeline.End =>
         ""
 
-      case Timeline.NonEmpty(recentEvent, followingEvents) =>
+      case Timeline.NonEmpty(recentEvent, _) =>
         s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
     }
 
@@ -528,7 +528,7 @@ object Timeline {
         case Data.End =>
           ""
 
-        case Data.NonEmpty(recentEvent, followingEvents) =>
+        case Data.NonEmpty(recentEvent, _) =>
           s"${recentEvent.unsafeRun()}, ${Console.GREEN}...${Console.RESET}"
       }
 

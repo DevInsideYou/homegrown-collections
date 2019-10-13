@@ -1,3 +1,9 @@
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2") // https://github.com/sbt/sbt-scalariform
+ThisBuild / scalaVersion := "2.12.10"
+ThisBuild / useSuperShell := false
+ThisBuild / autoStartServer := false
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1") // https://github.com/scoverage/sbt-scoverage
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.2")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.6")
+addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")

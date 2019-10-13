@@ -349,7 +349,7 @@ class MapSuite extends TestSuite {
   }
 
   test("exists with variance") {
-    val (employee, consultant) = bothRoles
+    val (employee, _ /*consultant*/ ) = bothRoles
 
     Map(employee -> employee).exists(_._2 == employee) shouldBe true
     // Map(employee -> employee).exists(_._2 == consultant) shouldBe false // compiles :( with a warning :)
@@ -669,9 +669,9 @@ class MapSuite extends TestSuite {
 
     val result: Map[Char, Boolean] =
       alphabet.flatMap {
-        case (aKey, aValue) =>
+        case (aKey, _) =>
           even.map {
-            case (eKey, eValue) =>
+            case (_, eValue) =>
               aKey -> eValue
           }
       }

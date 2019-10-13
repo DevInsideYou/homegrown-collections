@@ -8,20 +8,20 @@ package object collections {
     @inline final def io: IO[Gen] =
       IO.pure(seed)
 
-    @inline def timeline: Timeline[Gen] =
+    @inline final def timeline: Timeline[Gen] =
       Timeline.generateSame(seed)
 
-    @inline def timeline(
+    @inline final def timeline(
         next: Gen => Gen
     ): Timeline[Gen] =
       Timeline.generate(seed)(next)
 
-    @inline def timelineTransform[Event](
+    @inline final def timelineTransform[Event](
         next: (=> Gen) => (IO[Event], IO[Gen])
     ): Timeline[Event] =
       Timeline.generateTransform(seed)(next)
 
-    @inline def timelineTransform[Event](
+    @inline final def timelineTransform[Event](
         next: Gen => Gen,
         transform: Gen => Event
     ): Timeline[Event] =

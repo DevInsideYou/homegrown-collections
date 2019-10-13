@@ -4,12 +4,12 @@ import homegrown.mathlibrary._
 
 class GroupTheorySuite extends TestSuite {
   test("Group Theory") {
-    val intAddition: AbelianGroup[Int] = IntAddition
-    val intMultiplication: Monoid[Int] = IntMultiplication
+    IntAddition: AbelianGroup[Int]
+    IntMultiplication: Monoid[Int]
 
-    val booleanAddition: Rig[Boolean] = BooleanAddition
-    val booleanMultiplication: Rig[Boolean] = BooleanMultiplication
+    BooleanAddition: Rig[Boolean]
+    BooleanMultiplication: Rig[Boolean]
 
-    val stringConcatenation: Monoid[String] = StringConcatenation
+    StringConcatenation: Monoid[String]
   }
 }

@@ -46,7 +46,7 @@ object StandardLibraryMapJoin {
         self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that.get(thisKey)
-              .map { thatValue =>
+              .map { _ =>
                 acc
               }
               .getOrElse {
@@ -76,7 +76,7 @@ object StandardLibraryMapJoin {
         that.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thatKey, thatValue)) =>
             self.get(thatKey)
-              .map { thisValue =>
+              .map { _ =>
                 acc
               }
               .getOrElse {
@@ -103,7 +103,7 @@ object StandardLibraryMapJoin {
         that.foldLeft[Map[Key, TargetValue]](left) {
           case (acc, (thatKey, thatValue)) =>
             self.get(thatKey)
-              .map { thisValue =>
+              .map { _ =>
                 acc
               }
               .getOrElse {
@@ -120,7 +120,7 @@ object StandardLibraryMapJoin {
           self.foldLeft[Map[Key, TargetValue]](Map.empty) {
             case (acc, (thisKey, thisValue)) =>
               that.get(thisKey)
-                .map { thatValue =>
+                .map { _ =>
                   acc
                 }
                 .getOrElse {
@@ -131,7 +131,7 @@ object StandardLibraryMapJoin {
         that.foldLeft[Map[Key, TargetValue]](left) {
           case (acc, (thatKey, thatValue)) =>
             self.get(thatKey)
-              .map { thisValue =>
+              .map { _ =>
                 acc
               }
               .getOrElse {

@@ -535,8 +535,7 @@ sealed abstract class TimelineSuite extends TestSuite {
       def ascending(seed: Int): Timeline[Int] =
         sideEffect(seed) #:: ascending(seed + 1)
 
-      val ints: Timeline[Int] =
-        ascending(seed = 0)
+      ascending(seed = 0)
 
       eventsOccurredShouldBe(0)
     }
@@ -579,8 +578,7 @@ sealed abstract class TimelineSuite extends TestSuite {
       def ascending(seed: Int): Timeline[Int] =
         Timeline(sideEffect(seed)) #::: ascending(seed + 1)
 
-      val ints: Timeline[Int] =
-        ascending(seed = 0)
+      ascending(seed = 0)
 
       eventsOccurredShouldBe(0)
     }
@@ -596,7 +594,7 @@ sealed abstract class TimelineSuite extends TestSuite {
       val t1: Timeline[Int] = timeline.take(1)
       val t2: Timeline[Int] = timeline.take(2)
       val t3: Timeline[Int] = timeline.take(3)
-      val t4: Timeline[Int] = timeline.take(4)
+      timeline.take(4)
       eventsOccurredShouldBe(0)
 
       t.forced shouldBe List.empty
@@ -733,7 +731,7 @@ sealed abstract class TimelineSuite extends TestSuite {
         eventsOccurredShouldBe(0)
 
         val a = timeline
-        val b = timeline.map(e => e)
+        val b = timeline.map(identity)
 
         eventsOccurredShouldBe(0)
 
@@ -1085,7 +1083,6 @@ sealed abstract class TimelineSuite extends TestSuite {
       timeline.foldLeft(false)(_ || _) shouldBe true
       eventsOccurredShouldBe(1)
 
-      resetEventsOccurredCounter()
       timeline.aggregated(BooleanAddition) shouldBe true
 
       timeline.reduceLeft(_ || _) shouldBe Some(true)
@@ -1109,7 +1106,6 @@ sealed abstract class TimelineSuite extends TestSuite {
       list.foldLeft(false)(_ || _) shouldBe true
       // eventsOccurredShouldBe(1)
 
-      resetEventsOccurredCounter()
       list.aggregated(BooleanAddition) shouldBe true
 
       list.reduceLeft(_ || _) shouldBe Some(true)
@@ -1130,7 +1126,7 @@ sealed abstract class TimelineSuite extends TestSuite {
   test("unapply2") {
     new Environment {
       zeroOneTwo should matchPattern {
-        case Timeline.NonEmpty(recentEvent, followingEvents) =>
+        case Timeline.NonEmpty(_, _) =>
       }
 
       eventsOccurredShouldBe(0)
