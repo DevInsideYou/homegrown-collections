@@ -2,7 +2,7 @@ ThisBuild / organization := "com.devinsideyou"
 ThisBuild / scalaVersion := "2.13.1"
 ThisBuild / version      := "1.0.0"
 
-lazy val `my-project` =
+lazy val `homegrown-collections` =
   project
     .in(file("."))
     .settings(
