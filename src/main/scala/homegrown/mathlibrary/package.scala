@@ -17,23 +17,22 @@ package object mathlibrary {
   @inline def Gen: org.scalacheck.Gen.type =
     org.scalacheck.Gen
 
-  implicit final class InfixNotation[A](private val a1: A) extends AnyVal {
+  final implicit class InfixNotation[A](private val a1: A) extends AnyVal {
     @inline def combine(a2: A)(implicit magma: Magma[A]): A =
       magma.operation(a1, a2)
   }
 
-  def closure[A: Arbitrary: Magma](
-      operation: ClosedBinaryOperation[A]
-  ): Law = forAll { (a1: A, a2: A) =>
-    (a1 combine a2): A
-    operation(a1, a2): A
+  def closure[A: Arbitrary: Magma](operation: ClosedBinaryOperation[A]): Law =
+    forAll { (a1: A, a2: A) =>
+      (a1 combine a2): A
+      operation(a1, a2): A
 
-    true
-  }
+      true
+    }
 
   def associativity[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A]
-  ): Law = forAll { (a1: A, a2: A, a3: A) => // format: OFF
+    ): Law = forAll { (a1: A, a2: A, a3: A) => // format: OFF
     val chaining = (a1 combine  a2) combine a3  // a1.combine(a2)
                                                 //   .combine(a3)
 
@@ -51,7 +50,7 @@ package object mathlibrary {
   def identityLaw[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A],
       uniqueIdentityElement: A
-  ): Law = forAll { a: A => // format: OFF
+    ): Law = forAll { a: A => // format: OFF
     identity(a)                         == a &&
     a.combine(uniqueIdentityElement)    == a && //  left identity
     uniqueIdentityElement.combine(a)    == a && // right identity
@@ -64,7 +63,7 @@ package object mathlibrary {
       operation: ClosedBinaryOperation[A],
       uniqueIdentityElement: A,
       uniqueInverseElement: A => A
-  ): Law = forAll { a: A => // format: OFF
+    ): Law = forAll { a: A => // format: OFF
     a.combine(uniqueInverseElement(a))    == uniqueIdentityElement &&
     uniqueInverseElement(a).combine(a)    == uniqueIdentityElement &&
     operation(a, uniqueInverseElement(a)) == uniqueIdentityElement &&
@@ -73,7 +72,7 @@ package object mathlibrary {
 
   def commutativity[A: Arbitrary: Magma](
       operation: ClosedBinaryOperation[A]
-  ): Law = forAll { (a1: A, a2: A) =>
+    ): Law = forAll { (a1: A, a2: A) =>
     // a1.combine(a2) == a2.combine(a1)
     operation(a1, a2) == operation(a2, a1)
   }
@@ -81,7 +80,7 @@ package object mathlibrary {
   def distributivity[A: Arbitrary](
       plus: ClosedBinaryOperation[A],
       times: ClosedBinaryOperation[A]
-  ): Law = forAll { (a1: A, a2: A, a3: A) => // format: OFF
+    ): Law = forAll { (a1: A, a2: A, a3: A) => // format: OFF
     // a1 * (a2 + a3) == (a1 * a2) + (a1 * a3) // left distributivity
     // (a2 + a2) * a1 == (a2 * a1) + (a3 * a1) // right distributivity
 
@@ -144,7 +143,9 @@ package object mathlibrary {
 
   object BooleanAdditionMonoid extends BooleanAdditionMonoid
 
-  implicit object BooleanAddition extends Rig[Boolean] with BooleanAdditionMonoid {
+  implicit object BooleanAddition
+      extends Rig[Boolean]
+      with BooleanAdditionMonoid {
     final override lazy val that: Monoid[Boolean] =
       BooleanMultiplicationMonoid
   }
@@ -162,7 +163,9 @@ package object mathlibrary {
 
   object BooleanMultiplicationMonoid extends BooleanMultiplicationMonoid
 
-  implicit object BooleanMultiplication extends Rig[Boolean] with BooleanMultiplicationMonoid {
+  implicit object BooleanMultiplication
+      extends Rig[Boolean]
+      with BooleanMultiplicationMonoid {
     final override lazy val that: Monoid[Boolean] =
       BooleanAdditionMonoid
   }

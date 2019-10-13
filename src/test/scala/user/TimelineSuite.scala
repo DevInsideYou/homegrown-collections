@@ -52,7 +52,8 @@ sealed abstract class TimelineSuite extends TestSuite {
 
   test("factorial") {
     def assert(timeline: Timeline[Int]): Unit = {
-      timeline.take(10) shouldBe Timeline(1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880)
+      timeline.take(10) shouldBe Timeline(1, 1, 2, 6, 24, 120, 720, 5040, 40320,
+        362880)
     }
 
     val factorialTimeline: Timeline[Int] = {
@@ -63,7 +64,7 @@ sealed abstract class TimelineSuite extends TestSuite {
             acc
           else
             loop(
-              x   = x - 1,
+              x = x - 1,
               acc = acc * x
             )
 
@@ -82,7 +83,7 @@ sealed abstract class TimelineSuite extends TestSuite {
         acc #:: corecursiveFactorial(next, acc * next)
       }
 
-      corecursiveFactorial(x   = 0, acc = 1)
+      corecursiveFactorial(x = 0, acc = 1)
     }
 
     assert(factorialTimeline2)
@@ -110,7 +111,7 @@ sealed abstract class TimelineSuite extends TestSuite {
             acc2
           else
             loop(
-              x    = x - 1,
+              x = x - 1,
               acc1 = acc2,
               acc2 = acc1 + acc2
             )
@@ -192,7 +193,9 @@ sealed abstract class TimelineSuite extends TestSuite {
 
           case Timeline.NonEmpty(recentEvent, followingEvents) =>
             recentEvent.unsafeRun() #:: sieve(
-              followingEvents.unsafeRun().filter(_ % recentEvent.unsafeRun() != 0)
+              followingEvents
+                .unsafeRun()
+                .filter(_ % recentEvent.unsafeRun() != 0)
             )
         }
 
@@ -406,15 +409,15 @@ sealed abstract class TimelineSuite extends TestSuite {
     new Environment {
       val timeline1: Timeline[Int] =
         sideEffect(0).unfold(
-          next         = identity,
-          transform    = identity,
+          next = identity,
+          transform = identity,
           shouldFinish = _ => false
         )
 
       val timeline2: Timeline[Int] =
         sideEffect(10).unfold(
-          next         = identity,
-          transform    = identity,
+          next = identity,
+          transform = identity,
           shouldFinish = _ => false
         )
 
@@ -436,7 +439,7 @@ sealed abstract class TimelineSuite extends TestSuite {
     new Environment {
       val timeline: Timeline[Int] =
         Timeline.NonEmpty(
-          recentEvent     = IO.pure(sideEffect(0)),
+          recentEvent = IO.pure(sideEffect(0)),
           followingEvents = IO.pure(Timeline.End)
         )
 
@@ -455,13 +458,13 @@ sealed abstract class TimelineSuite extends TestSuite {
     new Environment {
       testHead {
         Timeline.NonEmpty(
-          recentEvent     = IO.pure(sideEffect(0)),
+          recentEvent = IO.pure(sideEffect(0)),
           followingEvents = IO.pure(
             Timeline.NonEmpty(
-              recentEvent     = IO.pure(sideEffect(1)),
+              recentEvent = IO.pure(sideEffect(1)),
               followingEvents = IO.pure(
                 Timeline.NonEmpty(
-                  recentEvent     = IO.pure(sideEffect(2)),
+                  recentEvent = IO.pure(sideEffect(2)),
                   followingEvents = IO.pure(Timeline.End)
                 )
               )
@@ -485,8 +488,7 @@ sealed abstract class TimelineSuite extends TestSuite {
 
     new Environment {
       testHead {
-        Timeline
-          .End
+        Timeline.End
           .add(sideEffect(2))
           .add(sideEffect(1))
           .add(sideEffect(0))
@@ -495,8 +497,7 @@ sealed abstract class TimelineSuite extends TestSuite {
 
     new Environment {
       testHead {
-        Timeline
-          .End
+        Timeline.End
           .prepend(sideEffect(2))
           .prepend(sideEffect(1))
           .prepend(sideEffect(0))
@@ -505,8 +506,7 @@ sealed abstract class TimelineSuite extends TestSuite {
 
     new Environment {
       testHead {
-        Timeline
-          .End
+        Timeline.End
           .after(sideEffect(2))
           .after(sideEffect(1))
           .after(sideEffect(0))
@@ -515,8 +515,7 @@ sealed abstract class TimelineSuite extends TestSuite {
 
     new Environment {
       testHead {
-        Timeline
-          .End
+        Timeline.End
           .#::(sideEffect(2))
           .#::(sideEffect(1))
           .#::(sideEffect(0))
@@ -1154,7 +1153,10 @@ sealed abstract class TimelineSuite extends TestSuite {
       eventsOccurredShouldBe(expected, expected)
     }
 
-    def eventsOccurredShouldBe(whenMemoized: Int, whenNotMemoized: Int): Unit = {
+    def eventsOccurredShouldBe(
+        whenMemoized: Int,
+        whenNotMemoized: Int
+      ): Unit = {
       val expected: Int =
         if (IO.isMemoizationEnabled)
           whenMemoized
@@ -1168,7 +1170,10 @@ sealed abstract class TimelineSuite extends TestSuite {
       eventsOccurredShouldNotBe(expected, expected)
     }
 
-    def eventsOccurredShouldNotBe(whenMemoized: Int, whenNotMemoized: Int): Unit = {
+    def eventsOccurredShouldNotBe(
+        whenMemoized: Int,
+        whenNotMemoized: Int
+      ): Unit = {
       val expected: Int =
         if (IO.isMemoizationEnabled)
           whenMemoized

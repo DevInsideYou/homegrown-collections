@@ -15,11 +15,13 @@ object AlgebraicStructure {
   }
 
   private val parameters: Parameters =
-    Parameters
-      .default
+    Parameters.default
       .withTestCallback {
         new TestCallback {
-          final override def onTestResult(name: String, result: Result): Unit = {
+          final override def onTestResult(
+              name: String,
+              result: Result
+            ): Unit = {
             if (!result.passed)
               sys.error(util.Pretty.pretty(result))
           }

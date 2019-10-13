@@ -11,7 +11,7 @@ package object user {
 
   def randomConsultant: Consultant =
     Consultant(
-      id          = randomString,
+      id = randomString,
       companyName = randomString
     )
 

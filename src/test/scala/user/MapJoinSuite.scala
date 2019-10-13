@@ -22,14 +22,16 @@ class MapJoinSuite extends TestSuite {
         // 1 is missing
         // 2 is missing
         3 -> "blue"
-      // 4 is missing
+        // 4 is missing
       )
 
     people
-      .join(cars).inner
-      .join(colors).inner shouldBe Map(
-        3 -> (("charlie", "cadillac") -> "blue")
-      )
+      .join(cars)
+      .inner
+      .join(colors)
+      .inner shouldBe Map(
+      3 -> (("charlie", "cadillac") -> "blue")
+    )
   }
 
   test("left outer join") {
@@ -99,7 +101,7 @@ object MapJoinSuite {
   │     3     │ "charlie"   │ "cadillac" │
   │     4     │ "delta"     │            │
   └───────────┴─────────────┴────────────┘
-  */
+   */
 
   type PersonId = Int
   type PersonName = String
@@ -118,7 +120,7 @@ object MapJoinSuite {
       1 -> "audi",
       2 -> "bmw",
       3 -> "cadillac"
-    // 4 is missing
+      // 4 is missing
     )
 
   final case class PersonWithCarBrand(name: String, carBrand: String)

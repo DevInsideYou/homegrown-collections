@@ -4,9 +4,17 @@ package collections
 import mathlibrary._
 
 trait Foldable[+Element] {
-  def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result
+  def foldLeft[Result](
+      seed: Result
+    )(
+      function: (Result, => Element) => Result
+    ): Result
 
-  def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result
+  def foldRight[Result](
+      seed: => Result
+    )(
+      function: (=> Element, => Result) => Result
+    ): Result
 
   @inline def aggregated[Super >: Element: Monoid]: Super =
     foldLeft(seed = Monoid[Super].uniqueIdentityElement) { (acc, current) =>
@@ -70,14 +78,24 @@ trait Foldable[+Element] {
 }
 
 object Foldable {
-  implicit def viewFromIterableToFoldableFromHGC[Element](from: Iterable[Element]): Foldable[Element] =
+  implicit def viewFromIterableToFoldableFromHGC[Element](
+      from: Iterable[Element]
+    ): Foldable[Element] =
     new Foldable[Element] {
-      final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result =
+      final override def foldLeft[Result](
+          seed: Result
+        )(
+          function: (Result, => Element) => Result
+        ): Result =
         from.foldLeft(seed) { (acc, current) =>
           function(acc, current)
         }
 
-      final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result =
+      final override def foldRight[Result](
+          seed: => Result
+        )(
+          function: (=> Element, => Result) => Result
+        ): Result =
         from.foldRight(seed) { (current, acc) =>
           function(current, acc)
         }

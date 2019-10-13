@@ -21,7 +21,8 @@ object Employee {
     Arbitrary.arbitrary[String].map(Employee.apply)
 }
 
-final case class Consultant(id: String, companyName: String) extends CompanyRole {
+final case class Consultant(id: String, companyName: String)
+    extends CompanyRole {
   final def submitInvoice(): Unit = {
     println("here is my invoice")
   }

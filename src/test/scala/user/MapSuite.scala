@@ -254,7 +254,9 @@ class MapSuite extends TestSuite {
   }
 
   test("foreach on an empty Map should not apply the function") {
-    noException should be thrownBy Map.empty[Nothing, Nothing].foreach(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Map
+      .empty[Nothing, Nothing]
+      .foreach(_ => sys.error("should not be thrown"))
   }
 
   test("foreach on a non empty Map should apply the function") {
@@ -324,7 +326,9 @@ class MapSuite extends TestSuite {
     size shouldBe map.size
   }
 
-  test("foreach should be parameterized in the result of the argument function so that it does not produce warnings") {
+  test(
+    "foreach should be parameterized in the result of the argument function so that it does not produce warnings"
+  ) {
     Map.empty[Nothing, Nothing].foreach(_ => 1)
   }
 
@@ -342,10 +346,13 @@ class MapSuite extends TestSuite {
     val element = randomString
 
     Map(element -> randomString).exists(_._1.size == element.size) shouldBe true
-    Map(element -> randomString).exists(_._1.size != element.size) shouldBe false
+    Map(element -> randomString)
+      .exists(_._1.size != element.size) shouldBe false
 
-    Map(element -> randomString).doesNotExist(_._1.size == element.size) shouldBe false
-    Map(element -> randomString).doesNotExist(_._1.size != element.size) shouldBe true
+    Map(element -> randomString)
+      .doesNotExist(_._1.size == element.size) shouldBe false
+    Map(element -> randomString)
+      .doesNotExist(_._1.size != element.size) shouldBe true
   }
 
   test("exists with variance") {
@@ -354,19 +361,33 @@ class MapSuite extends TestSuite {
     Map(employee -> employee).exists(_._2 == employee) shouldBe true
     // Map(employee -> employee).exists(_._2 == consultant) shouldBe false // compiles :( with a warning :)
 
-    Map[Employee, Employee](employee -> employee).exists(_._2 == employee) shouldBe true
-    Map[Employee, CompanyRole](employee -> employee).exists(_._2 == employee) shouldBe true
+    Map[Employee, Employee](employee -> employee)
+      .exists(_._2 == employee) shouldBe true
+    Map[Employee, CompanyRole](employee -> employee)
+      .exists(_._2 == employee) shouldBe true
 
-    Map[Employee, Employee](employee -> employee).exists((input: (Employee, Employee)) => input._2 == employee) shouldBe true
-    Map[Employee, Employee](employee -> employee).exists((input: (Employee, CompanyRole)) => input._2 == employee) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists((input: (CompanyRole, CompanyRole)) => input._2 == employee) shouldBe true
+    Map[Employee, Employee](employee -> employee).exists(
+      (input: (Employee, Employee)) => input._2 == employee
+    ) shouldBe true
+    Map[Employee, Employee](employee -> employee).exists(
+      (input: (Employee, CompanyRole)) => input._2 == employee
+    ) shouldBe true
+    Map[CompanyRole, CompanyRole](employee -> employee).exists(
+      (input: (CompanyRole, CompanyRole)) => input._2 == employee
+    ) shouldBe true
     "Map[CompanyRole, CompanyRole](employee -> employee).exists((input: (CompanyRole, Employee)) => input._2 == employee)" shouldNot typeCheck
 
-    Map[Employee, Employee](employee -> employee).exists(Set[(Employee, Employee)](employee -> employee)) shouldBe true
-    Map[Employee, Employee](employee -> employee).exists(Set[(Employee, CompanyRole)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set[(CompanyRole, CompanyRole)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set[(CompanyRole, Employee)](employee -> employee)) shouldBe true
-    Map[CompanyRole, CompanyRole](employee -> employee).exists(Set(employee -> employee)) shouldBe true
+    Map[Employee, Employee](employee -> employee)
+      .exists(Set[(Employee, Employee)](employee -> employee)) shouldBe true
+    Map[Employee, Employee](employee -> employee)
+      .exists(Set[(Employee, CompanyRole)](employee -> employee)) shouldBe true
+    Map[CompanyRole, CompanyRole](employee -> employee).exists(
+      Set[(CompanyRole, CompanyRole)](employee -> employee)
+    ) shouldBe true
+    Map[CompanyRole, CompanyRole](employee -> employee)
+      .exists(Set[(CompanyRole, Employee)](employee -> employee)) shouldBe true
+    Map[CompanyRole, CompanyRole](employee -> employee)
+      .exists(Set(employee -> employee)) shouldBe true
   }
 
   test("forall on an empty Map should yield false") {
@@ -378,17 +399,22 @@ class MapSuite extends TestSuite {
     val element = randomString
 
     Map(element -> randomString).forall(_._1.size == element.size) shouldBe true
-    Map(element -> randomString).forall(_._1.size != element.size) shouldBe false
+    Map(element -> randomString)
+      .forall(_._1.size != element.size) shouldBe false
 
-    Map(element -> randomString).notForall(_._1.size == element.size) shouldBe false
-    Map(element -> randomString).notForall(_._1.size != element.size) shouldBe true
+    Map(element -> randomString)
+      .notForall(_._1.size == element.size) shouldBe false
+    Map(element -> randomString)
+      .notForall(_._1.size != element.size) shouldBe true
   }
 
   test("Map() should not compile") {
     "Map()" shouldNot compile
   }
 
-  test("Calling the varargs apply method on the Map companion object should yield a Map with all the arguments as elements") {
+  test(
+    "Calling the varargs apply method on the Map companion object should yield a Map with all the arguments as elements"
+  ) {
     val a = randomString
     val b = randomString
     val c = randomString
@@ -542,7 +568,9 @@ class MapSuite extends TestSuite {
     Map.empty.hashCode should not be 0
   }
 
-  test("hashCode on a non empty Map should be the sum of all the hashCodes and the hashCode of the empty Map") {
+  test(
+    "hashCode on a non empty Map should be the sum of all the hashCodes and the hashCode of the empty Map"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -565,7 +593,9 @@ class MapSuite extends TestSuite {
     Map(key -> value).toString shouldBe s"HGCMap($key -> $value)"
   }
 
-  test("toString on a Map with two elements should contain 2 parens, both elements, 2 arrows and one comma") {
+  test(
+    "toString on a Map with two elements should contain 2 parens, both elements, 2 arrows and one comma"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -590,7 +620,9 @@ class MapSuite extends TestSuite {
     actual.count(_ == '>') shouldBe 2
   }
 
-  test("toString on a Map with three elements should contain 2 parens, three elements, 3 arrows and two commas") {
+  test(
+    "toString on a Map with three elements should contain 2 parens, three elements, 3 arrows and two commas"
+  ) {
     val first = randomString
     val second = randomString
     val third = randomString
@@ -629,7 +661,9 @@ class MapSuite extends TestSuite {
   }
 
   test("map on an empty Map should not apply the function") {
-    noException should be thrownBy Map.empty[Nothing, Nothing].map(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Map
+      .empty[Nothing, Nothing]
+      .map(_ => sys.error("should not be thrown"))
   }
 
   test("map should produce a Map") {
@@ -659,8 +693,8 @@ class MapSuite extends TestSuite {
       "hello" -> "planet",
       "world" -> "whatever"
     ).map {
-        case (key, value) => key.size -> value.size
-      } shouldBe Map(5 -> 8)
+      case (key, value) => key.size -> value.size
+    } shouldBe Map(5 -> 8)
   }
 
   test("flatMap should be able to produce a chessboard") {
@@ -682,7 +716,9 @@ class MapSuite extends TestSuite {
     )
   }
 
-  test("withDefault should return a default value dependent on the key for all keys without values") {
+  test(
+    "withDefault should return a default value dependent on the key for all keys without values"
+  ) {
     def defaultValueOf(key: Int): String =
       (key + 1).toString
 
@@ -710,7 +746,9 @@ class MapSuite extends TestSuite {
     map(key) shouldBe Some(value)
   }
 
-  test("withDefaultValue should return a default value for all keys without values") {
+  test(
+    "withDefaultValue should return a default value for all keys without values"
+  ) {
     val defaultValue = "defaultValue"
 
     val map =
@@ -771,13 +809,15 @@ class MapSuite extends TestSuite {
 
     map
       .getOrElseUpdated(key, newValue) shouldBe {
-        value -> map
-      }
+      value -> map
+    }
 
     called shouldBe false
   }
 
-  test("getOrElseUpdated should yield a new map if the value is not present for the key") {
+  test(
+    "getOrElseUpdated should yield a new map if the value is not present for the key"
+  ) {
     val key = randomInt
     val newValue = randomString
 
@@ -785,8 +825,8 @@ class MapSuite extends TestSuite {
       .empty[Int, String]
       .withDefaultValue("doesn't matter")
       .getOrElseUpdated(key, newValue) shouldBe {
-        newValue -> Map(key -> newValue)
-      }
+      newValue -> Map(key -> newValue)
+    }
   }
 
   test("getOrElseUpdated should call the by-name parameter at most once") {

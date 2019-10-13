@@ -19,7 +19,8 @@ object Distinct {
     require(areDistinct(first, second, third))
   }
 
-  final case class Four[T](first: T, second: T, third: T, fourth: T) extends Distinct {
+  final case class Four[T](first: T, second: T, third: T, fourth: T)
+      extends Distinct {
     require(areDistinct(first, second, third, fourth))
   }
 

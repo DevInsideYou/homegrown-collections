@@ -20,7 +20,11 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
           right.contains(input)
     }
 
-  final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result =
+  final override def foldLeft[Result](
+      seed: Result
+    )(
+      function: (Result, => Element) => Result
+    ): Result =
     this match {
       case Empty =>
         seed
@@ -31,7 +35,11 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
         left.foldLeft(rightResult)(function)
     }
 
-  final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result = this match {
+  final override def foldRight[Result](
+      seed: => Result
+    )(
+      function: (=> Element, => Result) => Result
+    ): Result = this match {
     case Empty =>
       seed
 
@@ -96,29 +104,48 @@ sealed abstract class Tree[+Element] extends FoldableFactory[Element, Tree] {
       else
         "│   "
 
-    def loop(prefix: String, isLeft: Boolean, isFirst: Boolean, set: Tree[Element]): String = {
+    def loop(
+        prefix: String,
+        isLeft: Boolean,
+        isFirst: Boolean,
+        set: Tree[Element]
+      ): String = {
       set match {
         case Empty =>
           ""
 
         case NonEmpty(left, element, right) =>
           prefix + leftOrRight(isLeft, isFirst) + element + "\n" +
-            loop(prefix + leftOrRightParent(isLeft, isFirst), isLeft  = false, isFirst = false, right) +
-            loop(prefix + leftOrRightParent(isLeft, isFirst), isLeft  = true, isFirst = false, left)
+            loop(
+              prefix + leftOrRightParent(isLeft, isFirst),
+              isLeft = false,
+              isFirst = false,
+              right
+            ) +
+            loop(
+              prefix + leftOrRightParent(isLeft, isFirst),
+              isLeft = true,
+              isFirst = false,
+              left
+            )
       }
     }
 
     loop(
-      prefix  = "",
-      isLeft  = true,
+      prefix = "",
+      isLeft = true,
       isFirst = true,
-      set     = this
+      set = this
     )
   }
 }
 
 object Tree extends Factory[Tree] {
-  final case class NonEmpty[+Element](left: Tree[Element], element: Element, right: Tree[Element]) extends Tree[Element] {
+  final case class NonEmpty[+Element](
+      left: Tree[Element],
+      element: Element,
+      right: Tree[Element])
+      extends Tree[Element] {
     final override def productPrefix: String = "Tree.NonEmpty"
   }
 

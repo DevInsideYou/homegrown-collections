@@ -4,7 +4,9 @@ import homegrown.collections._
 import homegrown.mathlibrary._
 
 class ListSuite extends TestSuite {
-  test("Calling the varargs apply method on the List companion object should yield a List with all the arguments as elements which are appropriately ordered") {
+  test(
+    "Calling the varargs apply method on the List companion object should yield a List with all the arguments as elements which are appropriately ordered"
+  ) {
     forAll { (a: Int, b: Int, c: Int) =>
       List(a, b, c) shouldBe List.empty.add(c).add(b).add(a)
       List(a, b, c) shouldBe List.empty.push(c).push(b).push(a)
@@ -29,7 +31,9 @@ class ListSuite extends TestSuite {
     }
   }
 
-  test("toString on a List with two elements should yield HGCList(first, second)") {
+  test(
+    "toString on a List with two elements should yield HGCList(first, second)"
+  ) {
     forAll { (first: Int, second: Int) =>
       List(first, second).toString shouldBe s"HGCList($first, $second)"
       List(second, first).toString shouldBe s"HGCList($second, $first)"
@@ -192,11 +196,19 @@ class ListSuite extends TestSuite {
     List.empty interleave List.empty shouldBe List.empty
 
     List(0, 1, 2, 3) interleave List(10) shouldBe List(
-      0, 10, 1, 2, 3
+      0,
+      10,
+      1,
+      2,
+      3
     )
 
     List(0) interleave List(10, 11, 12, 13) shouldBe List(
-      0, 10, 11, 12, 13
+      0,
+      10,
+      11,
+      12,
+      13
     )
 
     List(0, 1, 2, 3) interleave List(10, 11, 12, 13) shouldBe List(

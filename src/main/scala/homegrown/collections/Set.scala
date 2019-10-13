@@ -3,9 +3,8 @@ package collections
 
 import mathlibrary._
 
-final class Set[+Element] private (
-    val tree: Tree[Element]
-) extends FoldableFactory[Element, Set] {
+final class Set[+Element] private (val tree: Tree[Element])
+    extends FoldableFactory[Element, Set] {
   import Set._
 
   final override protected def factory: Factory[Set] =
@@ -17,10 +16,18 @@ final class Set[+Element] private (
   final override def contains[Super >: Element](input: Super): Boolean =
     tree.contains(input)
 
-  final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result =
+  final override def foldLeft[Result](
+      seed: Result
+    )(
+      function: (Result, => Element) => Result
+    ): Result =
     tree.foldLeft(seed)(function)
 
-  final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result =
+  final override def foldRight[Result](
+      seed: => Result
+    )(
+      function: (=> Element, => Result) => Result
+    ): Result =
     tree.foldRight(seed)(function)
 
   final override def add[Super >: Element](input: Super): Set[Super] =
@@ -96,7 +103,9 @@ object Set extends Factory[Set] {
   private def apply[Element](tree: Tree[Element]): Set[Element] =
     new Set(tree)
 
-  implicit def SetCanBeUsedAsFunction1[Element](set: Set[Element]): Element => Boolean =
+  implicit def SetCanBeUsedAsFunction1[Element](
+      set: Set[Element]
+    ): Element => Boolean =
     set.apply
 
   implicit def arbitrary[T: Arbitrary]: Arbitrary[Set[T]] =

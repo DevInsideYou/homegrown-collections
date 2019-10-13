@@ -8,9 +8,9 @@ trait Summoner[B[_]] {
 trait Magma[A] extends AlgebraicStructure[A] {
   def operation: ClosedBinaryOperation[A]
 
-  protected implicit def arbitrary: Arbitrary[A]
+  implicit protected def arbitrary: Arbitrary[A]
 
-  final protected implicit def self: Magma[A] =
+  final implicit protected def self: Magma[A] =
     this
 
   override def laws: Set[Law] =

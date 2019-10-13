@@ -1,18 +1,22 @@
 package homegrown.collections
 
 object MapJoin {
-  final implicit class DSL[Key, ThisValue](private val self: Map[Key, ThisValue]) {
-    def join[ThatValue](that: Map[Key, ThatValue]): Join[Key, ThisValue, ThatValue] =
+  final implicit class DSL[Key, ThisValue](
+      private val self: Map[Key, ThisValue]) {
+    def join[ThatValue](
+        that: Map[Key, ThatValue]
+      ): Join[Key, ThisValue, ThatValue] =
       new Join(self, that)
 
     class Join[Key, ThisValue, ThatValue](
         self: Map[Key, ThisValue],
-        that: Map[Key, ThatValue]
-    ) {
+        that: Map[Key, ThatValue]) {
       def inner: Map[Key, (ThisValue, ThatValue)] =
         inner(T2)
 
-      def inner[TargetValue](factory: (ThisValue, ThatValue) => TargetValue): Map[Key, TargetValue] =
+      def inner[TargetValue](
+          factory: (ThisValue, ThatValue) => TargetValue
+        ): Map[Key, TargetValue] =
         self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
@@ -27,7 +31,9 @@ object MapJoin {
       def leftOuter: Map[Key, (ThisValue, Option[ThatValue])] =
         leftOuter(T2)
 
-      def leftOuter[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
+      def leftOuter[TargetValue](
+          factory: (ThisValue, Option[ThatValue]) => TargetValue
+        ): Map[Key, TargetValue] =
         self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
@@ -42,7 +48,9 @@ object MapJoin {
       def leftOnly: Map[Key, (ThisValue, Option[ThatValue])] =
         leftOnly(T2)
 
-      def leftOnly[TargetValue](factory: (ThisValue, Option[ThatValue]) => TargetValue): Map[Key, TargetValue] =
+      def leftOnly[TargetValue](
+          factory: (ThisValue, Option[ThatValue]) => TargetValue
+        ): Map[Key, TargetValue] =
         self.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thisKey, thisValue)) =>
             that(thisKey)
@@ -57,7 +65,9 @@ object MapJoin {
       def rightOuter: Map[Key, (Option[ThisValue], ThatValue)] =
         rightOuter(T2)
 
-      def rightOuter[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
+      def rightOuter[TargetValue](
+          factory: (Option[ThisValue], ThatValue) => TargetValue
+        ): Map[Key, TargetValue] =
         that.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
@@ -72,7 +82,9 @@ object MapJoin {
       def rightOnly: Map[Key, (Option[ThisValue], ThatValue)] =
         rightOnly(T2)
 
-      def rightOnly[TargetValue](factory: (Option[ThisValue], ThatValue) => TargetValue): Map[Key, TargetValue] =
+      def rightOnly[TargetValue](
+          factory: (Option[ThisValue], ThatValue) => TargetValue
+        ): Map[Key, TargetValue] =
         that.foldLeft[Map[Key, TargetValue]](Map.empty) {
           case (acc, (thatKey, thatValue)) =>
             self(thatKey)
@@ -87,7 +99,9 @@ object MapJoin {
       def fullOuter: Map[Key, (Option[ThisValue], Option[ThatValue])] =
         fullOuter(T2)
 
-      def fullOuter[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
+      def fullOuter[TargetValue](
+          factory: (Option[ThisValue], Option[ThatValue]) => TargetValue
+        ): Map[Key, TargetValue] = {
         val left =
           self.foldLeft[Map[Key, TargetValue]](Map.empty) {
             case (acc, (thisKey, thisValue)) =>
@@ -115,7 +129,9 @@ object MapJoin {
       def outer: Map[Key, (Option[ThisValue], Option[ThatValue])] =
         outer(T2)
 
-      def outer[TargetValue](factory: (Option[ThisValue], Option[ThatValue]) => TargetValue): Map[Key, TargetValue] = {
+      def outer[TargetValue](
+          factory: (Option[ThisValue], Option[ThatValue]) => TargetValue
+        ): Map[Key, TargetValue] = {
         val left =
           self.foldLeft[Map[Key, TargetValue]](Map.empty) {
             case (acc, (thisKey, thisValue)) =>

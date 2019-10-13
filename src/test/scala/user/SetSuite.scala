@@ -129,7 +129,9 @@ class SetSuite extends TestSuite {
     Set.empty.union(Set.empty) shouldBe Set.empty
   }
 
-  test("union on a non empty Set with an empty set should yield the original Set untouched") {
+  test(
+    "union on a non empty Set with an empty set should yield the original Set untouched"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -163,7 +165,11 @@ class SetSuite extends TestSuite {
 
     Set(employee).union(Set(consultant)) shouldBe Set(employee, consultant)
 
-    Set[Employee](employee).add(consultant: CompanyRole) shouldBe Set[CompanyRole](employee, consultant)
+    Set[Employee](employee)
+      .add(consultant: CompanyRole) shouldBe Set[CompanyRole](
+      employee,
+      consultant
+    )
   }
 
   test("intersection on empty Set should yield an empty Set") {
@@ -177,7 +183,9 @@ class SetSuite extends TestSuite {
     Set.nothing.filterNot(_ => false) shouldBe Set.empty
   }
 
-  test("intersection on a non empty Set with an empty Set should yield an empty Set") {
+  test(
+    "intersection on a non empty Set with an empty Set should yield an empty Set"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -218,7 +226,9 @@ class SetSuite extends TestSuite {
     Set.empty.difference(Set.nothing) shouldBe Set.empty
   }
 
-  test("difference on a non empty Set with an empty Set should yield an empty Set") {
+  test(
+    "difference on a non empty Set with an empty Set should yield an empty Set"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -247,7 +257,9 @@ class SetSuite extends TestSuite {
     right.difference(left) shouldBe Set(d)
   }
 
-  test("difference on two sets with different types should yield a Set with the common type") {
+  test(
+    "difference on two sets with different types should yield a Set with the common type"
+  ) {
     forAll { (employee: Employee, consultant: Consultant) =>
       val employeeSet = Set(employee)
       val consultantSet = Set(consultant)
@@ -386,7 +398,9 @@ class SetSuite extends TestSuite {
     Set.empty.hashCode should not be 0
   }
 
-  test("hashCode on a non empty Set should be the sum of all the hashCodes and the hashCode of the empty Set") {
+  test(
+    "hashCode on a non empty Set should be the sum of all the hashCodes and the hashCode of the empty Set"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -459,7 +473,9 @@ class SetSuite extends TestSuite {
     "Set()" shouldNot compile
   }
 
-  test("Calling the varargs apply method on the Set companion object should yield a Set with all the arguments as elements") {
+  test(
+    "Calling the varargs apply method on the Set companion object should yield a Set with all the arguments as elements"
+  ) {
     val a = randomString
     val b = randomString
     val c = randomString
@@ -468,7 +484,9 @@ class SetSuite extends TestSuite {
   }
 
   test("foreach on an empty Set should not apply the function") {
-    noException should be thrownBy Set.nothing.foreach(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.nothing.foreach(
+      _ => sys.error("should not be thrown")
+    )
   }
 
   test("foreach on a non empty Set should apply the function") {
@@ -525,12 +543,16 @@ class SetSuite extends TestSuite {
     size shouldBe set.size
   }
 
-  test("foreach should be parameterized in the result of the argument function so that it does not produce warnings") {
+  test(
+    "foreach should be parameterized in the result of the argument function so that it does not produce warnings"
+  ) {
     Set.nothing.foreach(_ => 1)
   }
 
   test("map on an empty Set should not apply the function") {
-    noException should be thrownBy Set.nothing.map(_ => sys.error("should not be thrown"))
+    noException should be thrownBy Set.nothing.map(
+      _ => sys.error("should not be thrown")
+    )
   }
 
   test("map should produce a Set") {
@@ -629,7 +651,9 @@ class SetSuite extends TestSuite {
 
     orderedClassmates.filter(friends) shouldBe Seq("bob", "frank")
 
-    orderedClassmates.filter(isFriend) shouldBe orderedClassmates.filter(friends)
+    orderedClassmates.filter(isFriend) shouldBe orderedClassmates.filter(
+      friends
+    )
   }
 
   test("contains on an empty Set should yield false") {
@@ -661,9 +685,12 @@ class SetSuite extends TestSuite {
     Set[Employee](employee).exists(_ == employee) shouldBe true
     Set[CompanyRole](employee).exists(_ == employee) shouldBe true
 
-    Set[Employee](employee).exists((input: Employee) => input == employee) shouldBe true
-    Set[Employee](employee).exists((input: CompanyRole) => input == employee) shouldBe true
-    Set[CompanyRole](employee).exists((input: CompanyRole) => input == employee) shouldBe true
+    Set[Employee](employee)
+      .exists((input: Employee) => input == employee) shouldBe true
+    Set[Employee](employee)
+      .exists((input: CompanyRole) => input == employee) shouldBe true
+    Set[CompanyRole](employee)
+      .exists((input: CompanyRole) => input == employee) shouldBe true
     "Set[CompanyRole](employee).exists((input: Employee) => input == employee)" shouldNot typeCheck
 
     Set[Employee](employee).exists(Set[Employee](employee)) shouldBe true
@@ -697,7 +724,9 @@ class SetSuite extends TestSuite {
     Set(element).toString shouldBe s"HGCSet($element)"
   }
 
-  test("toString on a Set with two elements should contain 2 braces, both elements and one comma") {
+  test(
+    "toString on a Set with two elements should contain 2 braces, both elements and one comma"
+  ) {
     val first = randomString
     val second = randomString
 
@@ -718,7 +747,9 @@ class SetSuite extends TestSuite {
     actual.count(_ == ')') shouldBe 1
   }
 
-  test("toString on a Set with three elements should contain 2 braces, three elements and two commas") {
+  test(
+    "toString on a Set with three elements should contain 2 braces, three elements and two commas"
+  ) {
     val first = randomString
     val second = randomString
     val third = randomString
@@ -753,12 +784,14 @@ class SetSuite extends TestSuite {
       .groupBy(_.toString) shouldBe Map.empty[String, Set[Int]]
   }
 
-  test("groupBy on a nonEmpty Set should produce a Map from key: Key to value: Set[Element]") {
+  test(
+    "groupBy on a nonEmpty Set should produce a Map from key: Key to value: Set[Element]"
+  ) {
     Set(1, 2, 3, 4)
       .groupBy(_ % 2 == 0) shouldBe Map(
-        true -> Set(2, 4),
-        false -> Set(1, 3)
-      )
+      true -> Set(2, 4),
+      false -> Set(1, 3)
+    )
 
     val alice = Person("Alice", age = 27)
     val bob = Person("Bob", age = 25)
@@ -791,9 +824,9 @@ class SetSuite extends TestSuite {
 
     peopleWhoAreXYearsOld
       .mapValues(_.size) shouldBe Map(
-        25 -> 1,
-        27 -> 3
-      )
+      25 -> 1,
+      27 -> 3
+    )
   }
 
   test("withSomeValues on an empty Set should yield an empty Map") {

@@ -4,8 +4,8 @@ package collections
 import mathlibrary._
 
 sealed abstract class List[+Element]
-  extends FoldableFactory[Element, List]
-  with (Int => Option[Element]) {
+    extends FoldableFactory[Element, List]
+    with (Int => Option[Element]) {
   import List._
 
   final override protected def factory: Factory[List] =
@@ -13,10 +13,7 @@ sealed abstract class List[+Element]
 
   final override def apply(index: Int): Option[Element] = {
     @scala.annotation.tailrec
-    def loop(
-        list: List[Element],
-        count: Int
-    ): Option[Element] =
+    def loop(list: List[Element], count: Int): Option[Element] =
       if (index < 0)
         None
       else if (count == index)
@@ -34,7 +31,11 @@ sealed abstract class List[+Element]
     !isEmpty
 
   @scala.annotation.tailrec
-  final override def foldLeft[Result](seed: Result)(function: (Result, => Element) => Result): Result = this match {
+  final override def foldLeft[Result](
+      seed: Result
+    )(
+      function: (Result, => Element) => Result
+    ): Result = this match {
     case Empty =>
       seed
 
@@ -43,23 +44,35 @@ sealed abstract class List[+Element]
       otherElements.foldLeft(currentResult)(function)
   }
 
-  final def reduceLeft[Result >: Element](function: (Result, => Element) => Result): Option[Result] =
+  final def reduceLeft[Result >: Element](
+      function: (Result, => Element) => Result
+    ): Option[Result] =
     head.map { seed =>
       tail.foldLeft[Result](seed)(function)
     }
 
-  final def reduceLeftOrThrowException[Result >: Element](function: (Result, => Element) => Result): Result =
+  final def reduceLeftOrThrowException[Result >: Element](
+      function: (Result, => Element) => Result
+    ): Result =
     reduceLeft(function).get
 
-  final def reduceRight[Result >: Element](function: (=> Element, => Result) => Result): Option[Result] =
+  final def reduceRight[Result >: Element](
+      function: (=> Element, => Result) => Result
+    ): Option[Result] =
     head.map { seed =>
       tail.foldRight[Result](seed)(function)
     }
 
-  final def reduceRightOrThrowException[Result >: Element](function: (=> Element, => Result) => Result): Result =
+  final def reduceRightOrThrowException[Result >: Element](
+      function: (=> Element, => Result) => Result
+    ): Result =
     reduceRight(function).get
 
-  final override def foldRight[Result](seed: => Result)(function: (=> Element, => Result) => Result): Result =
+  final override def foldRight[Result](
+      seed: => Result
+    )(
+      function: (=> Element, => Result) => Result
+    ): Result =
     this match {
       case Empty =>
         seed
@@ -103,7 +116,7 @@ sealed abstract class List[+Element]
         list: List[Element],
         acc: List[Element],
         count: Int
-    ): List[Element] = list match {
+      ): List[Element] = list match {
       case Empty =>
         acc
 
@@ -112,8 +125,8 @@ sealed abstract class List[+Element]
           acc
         else
           loop(
-            list  = otherElements,
-            acc   = element :: acc,
+            list = otherElements,
+            acc = element :: acc,
             count = count + 1
           )
     }
@@ -133,7 +146,9 @@ sealed abstract class List[+Element]
       s"${element}${otherElements.splitByCommaSpace}"
   }
 
-  final def zip[ThatElement](that: List[ThatElement]): List[(Element, ThatElement)] =
+  final def zip[ThatElement](
+      that: List[ThatElement]
+    ): List[(Element, ThatElement)] =
     this match {
       case Empty =>
         Empty
@@ -159,7 +174,10 @@ sealed abstract class List[+Element]
 }
 
 object List extends Factory[List] {
-  final override def apply[Element](element: Element, otherElements: Element*): List[Element] =
+  final override def apply[Element](
+      element: Element,
+      otherElements: Element*
+    ): List[Element] =
     element :: otherElements.foldRight[List[Element]](empty)(_ :: _)
 
   def unapplySeq[Event](list: List[Event]): Option[scala.Seq[Event]] =
@@ -170,7 +188,10 @@ object List extends Factory[List] {
         list.foldRight[scala.List[Event]](scala.List.empty)(_ :: _)
       )
 
-  final case class NonEmpty[+Element](element: Element, otherElements: List[Element]) extends List[Element]
+  final case class NonEmpty[+Element](
+      element: Element,
+      otherElements: List[Element])
+      extends List[Element]
   final case object Empty extends List[Nothing]
 
   final override def nothing: List[Nothing] = Empty
